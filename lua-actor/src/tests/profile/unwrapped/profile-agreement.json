@@ -126,34 +126,6 @@
         "schema": "verified-credential-eip712.schema.json",
         "displayName": "Profile Update",
         "description": "User updates their profile information including nickname, bio, or profile picture.",
-        "data": {
-          "nickname": {
-            "type": "string",
-            "name": "Profile Nickname",
-            "description": "Display name for the user profile",
-            "validation": {
-              "required": false,
-              "maxLength": 50
-            }
-          },
-          "bio": {
-            "type": "string",
-            "name": "Profile Bio", 
-            "description": "User biography or description",
-            "validation": {
-              "required": false,
-              "maxLength": 500
-            }
-          },
-          "profilePicture": {
-            "type": "string",
-            "name": "Profile Picture",
-            "description": "URL or hash of the profile picture",
-            "validation": {
-              "required": false
-            }
-          }
-        },
         "issuer": "${variables.userEthAddress.value}"
       },
       "profileDeactivation": {
