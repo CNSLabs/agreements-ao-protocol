@@ -155,7 +155,7 @@ end
 local function loadInputDoc(path)
   -- Get the directory of the calling script (level 2 in the stack)
   local scriptPath = debug.getinfo(2, "S").source:sub(2)  -- Remove the @ prefix
-  local scriptDir = scriptPath:match("(.*[/\\])") or "."
+  local scriptDir = scriptPath:match("(.*[/\\])") or "./"
   
   -- Normalize path separators to forward slashes
   path = path:gsub("\\", "/")

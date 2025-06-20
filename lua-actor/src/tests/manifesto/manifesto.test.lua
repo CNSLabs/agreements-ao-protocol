@@ -32,15 +32,8 @@ local function runTestSuite(params)
     end
 
     -- Extract agreement hash
-    local agreementHash
-    if expectVc then
-        local decodedAgreement = json.decode(agreementDoc)
-        local agreementBase64 = decodedAgreement.credentialSubject.agreement
-        agreementHash = crypto.digest.keccak256(agreementBase64).asHex()
-    else
-        agreementHash = crypto.digest.keccak256(agreementDoc).asHex()
-    end
-
+    local agreementHash = crypto.digest.keccak256(agreementDoc).asHex()
+    
     -- Initialize DFSM
     local dfsm
     if expectVc then
