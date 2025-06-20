@@ -1,13 +1,11 @@
 local Handlers = require("handlers")
+local ActorExtensions = require("actor-extensions")
 
 local json = require("json")
-local Array = require(".crypto.util.array")
 local crypto = require(".crypto.init")
-local utils = require(".utils")
 local base64 = require(".base64")
 
 local DFSM = require("dfsm")
-
 
 -- BEGIN: actor's internal state
 StateMachine = StateMachine or nil
@@ -16,62 +14,11 @@ DocumentHash = DocumentHash or nil
 DocumentOwner = DocumentOwner or nil
 -- END: actor's internal state
 
--- Extension points for domain-specific functionality
-local ExtensionPoints = {
-  PRE_INIT = "pre_init",
-  POST_INIT = "post_init",
-  PRE_INPUT_PROCESSING = "pre_input_processing",
-  POST_INPUT_PROCESSING = "post_input_processing",
-  INPUT_VALIDATION = "input_validation",
-  STATE_QUERY = "state_query"
-}
-
--- Extension registry
-local extensions = {}
-
--- Register an extension for a specific extension point
-local function registerExtension(extensionPoint, handler)
-  if not extensions[extensionPoint] then
-    extensions[extensionPoint] = {}
-  end
-  table.insert(extensions[extensionPoint], handler)
-end
-
--- Execute all registered extensions for a given point
-local function executeExtensions(extensionPoint, context)
-  local handlers = extensions[extensionPoint] or {}
-  local results = {}
-  
-  for i, handler in ipairs(handlers) do
-    local success, result = pcall(handler, context)
-    if success then
-      table.insert(results, result)
-    else
-      print("[apoc-v2] Extension execution failed:", tostring(result))
-      table.insert(results, { error = result })
-    end
-  end
-  
-  return results
-end
-
--- Context builder for extension execution
-local function buildContext(msg, stateMachine, customData)
-  return {
-    msg = msg,
-    stateMachine = stateMachine,
-    data = customData or {},
-    timestamp = os.time()
-  }
-end
-
 local function resetState()
   StateMachine = nil
   Document = nil
   DocumentHash = nil
   DocumentOwner = nil
-  -- Don't clear extensions - they should persist across resets
-  -- extensions = {}
 end
 
 local function reply_error(msg, error)
@@ -83,8 +30,6 @@ local function reply_error(msg, error)
     }
   })
   print("Error during execution: " .. error)
-  -- throwing errors seems to somehow get in the way of msg.reply going through, even though it happens strictly after...
-  -- error(error_msg)
 end
 
 -- Enhanced input processor with extension support
@@ -103,31 +48,25 @@ local function processInputWithExtensions(msg)
   local inputValue = Data.inputValue
   
   -- Build context for extensions
-  local context = buildContext(msg, StateMachine, {
+  local context = ActorExtensions.buildContext(msg, StateMachine, {
     inputValue = inputValue,
     inputData = Data
   })
   
   -- Execute pre-processing extensions
-  local preResults = executeExtensions(ExtensionPoints.PRE_INPUT_PROCESSING, context)
+  local preResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.PRE_INPUT_PROCESSING, context)
   
   -- Check for errors in pre-processing
-  for _, result in ipairs(preResults) do
-    if result.error then
-      reply_error(msg, result.error)
-      return false
-    end
+  if ActorExtensions.checkExtensionErrors(preResults, function(error) reply_error(msg, error) end) then
+    return false
   end
   
   -- Execute input validation extensions
-  local validationResults = executeExtensions(ExtensionPoints.INPUT_VALIDATION, context)
+  local validationResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.INPUT_VALIDATION, context)
   
   -- Check for validation errors
-  for _, result in ipairs(validationResults) do
-    if result.error then
-      reply_error(msg, result.error)
-      return false
-    end
+  if ActorExtensions.checkExtensionErrors(validationResults, function(error) reply_error(msg, error) end) then
+    return false
   end
   
   -- Process through base DFSM
@@ -139,14 +78,11 @@ local function processInputWithExtensions(msg)
   end
   
   -- Execute post-processing extensions
-  local postResults = executeExtensions(ExtensionPoints.POST_INPUT_PROCESSING, context)
+  local postResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.POST_INPUT_PROCESSING, context)
   
   -- Check for errors in post-processing
-  for _, result in ipairs(postResults) do
-    if result.error then
-      reply_error(msg, result.error)
-      return false
-    end
+  if ActorExtensions.checkExtensionErrors(postResults, function(error) reply_error(msg, error) end) then
+    return false
   end
   
   msg.reply({ Data = { success = true } })
@@ -189,15 +125,12 @@ local function initializeWithExtensions(msg)
   end
   
   -- Execute pre-init extensions
-  local preContext = buildContext(msg, nil, { document = agreementJson })
-  local preResults = executeExtensions(ExtensionPoints.PRE_INIT, preContext)
+  local preContext = ActorExtensions.buildContext(msg, nil, { document = agreementJson })
+  local preResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.PRE_INIT, preContext)
   
   -- Check for pre-init errors
-  for _, result in ipairs(preResults) do
-    if result and result.error then
-      reply_error(msg, result.error)
-      return false
-    end
+  if ActorExtensions.checkExtensionErrors(preResults, function(error) reply_error(msg, error) end) then
+    return false
   end
   
   -- Extract initial variable values for DFSM (fallback to document.variables if not provided)
@@ -226,15 +159,12 @@ local function initializeWithExtensions(msg)
   StateMachine = dfsm
   
   -- Execute post-init extensions
-  local postContext = buildContext(msg, StateMachine, { document = Document })
-  local postResults = executeExtensions(ExtensionPoints.POST_INIT, postContext)
+  local postContext = ActorExtensions.buildContext(msg, StateMachine, { document = Document })
+  local postResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.POST_INIT, postContext)
   
   -- Check for post-init errors
-  for _, result in ipairs(postResults) do
-    if result and result.error then
-      reply_error(msg, result.error)
-      return false
-    end
+  if ActorExtensions.checkExtensionErrors(postResults, function(error) reply_error(msg, error) end) then
+    return false
   end
 
   msg.reply({ Data = { success = true } })
@@ -255,20 +185,13 @@ local function getStateWithExtensions(msg)
     Inputs = StateMachine:getInputs(),
     ReceivedInputs = StateMachine:getReceivedInputs(),
   }
-  -- print(state)
   
   -- Execute state query extensions
-  local context = buildContext(msg, StateMachine, { baseState = baseState })
-  local queryResults = executeExtensions(ExtensionPoints.STATE_QUERY, context)
+  local context = ActorExtensions.buildContext(msg, StateMachine, { baseState = baseState })
+  local queryResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.STATE_QUERY, context)
   
   -- Merge extension results into base state
-  for _, result in ipairs(queryResults) do
-    if result and type(result) == "table" then
-      for key, value in pairs(result) do
-        baseState[key] = value
-      end
-    end
-  end
+  baseState = ActorExtensions.mergeExtensionResults(baseState, queryResults)
   
   msg.reply({ Data = baseState })
 end
@@ -293,7 +216,6 @@ Handlers.add(
     msg.reply({ Data = {
         Document = Document,
         DocumentHash = DocumentHash,
-        -- DocumentOwner = DocumentOwner,
     }})
   end
 )
@@ -308,11 +230,11 @@ Handlers.add(
 return { 
   Handlers = Handlers, 
   resetState = resetState,
-  -- Extension framework
-  ExtensionPoints = ExtensionPoints,
-  registerExtension = registerExtension,
-  executeExtensions = executeExtensions,
-  buildContext = buildContext,
+  -- Extension framework (delegated to ActorExtensions library)
+  ExtensionPoints = ActorExtensions.ExtensionPoints,
+  registerExtension = ActorExtensions.registerExtension,
+  executeExtensions = ActorExtensions.executeExtensions,
+  buildContext = ActorExtensions.buildContext,
   -- Utility functions for extensions
   reply_error = reply_error
 }

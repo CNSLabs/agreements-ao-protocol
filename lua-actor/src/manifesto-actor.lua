@@ -1,8 +1,8 @@
-local json = require("json")
-local crypto = require(".crypto.init")
+-- Manifesto Actor
+-- Extends the base actor with manifesto-specific functionality
 
--- Import the extensible base actor
 local BaseActor = require("apoc-v2")
+local ActorExtensions = require("actor-extensions")
 local Handlers = BaseActor.Handlers
 
 -- BEGIN: manifesto-specific state
@@ -11,128 +11,45 @@ SignerCount = SignerCount or 0
 -- END: manifesto-specific state
 
 local function resetState()
-  print("[manifesto-actor] resetState called")
   -- Reset base state
   BaseActor.resetState()
   -- Reset manifesto-specific state
   Signers = {}
   SignerCount = 0
-  print("[manifesto-actor] Signers and SignerCount reset")
 end
 
 -- Manifesto-specific extension functions
 local function setupManifestoExtensions()
-  print("[manifesto-actor] Registering extensions...")
-  -- Pre-init: Initialize manifesto-specific state
-  BaseActor.registerExtension(BaseActor.ExtensionPoints.PRE_INIT, function(context)
-    print("[manifesto-actor] PRE_INIT extension called")
-    Signers = {}
-    SignerCount = 0
-    print("[manifesto-actor] PRE_INIT: Signers and SignerCount reset")
-    return { success = true }
-  end)
-  
-  -- Input validation: Validate manifesto signatures
-  BaseActor.registerExtension(BaseActor.ExtensionPoints.INPUT_VALIDATION, function(context)
-    print("[manifesto-actor] INPUT_VALIDATION extension called")
+  -- Pre-input processing: Only check for duplicate signatures
+  ActorExtensions.registerExtension(ActorExtensions.ExtensionPoints.PRE_INPUT_PROCESSING, function(context)
     local inputValue = context.data.inputValue
-    
-    print("[manifesto-actor] INPUT_VALIDATION: inputValue type:", type(inputValue))
-    
-    -- Parse the input to extract signer information
-    local vcJson
-    if type(inputValue) == "string" then
-      print("[manifesto-actor] INPUT_VALIDATION: inputValue is string, decoding...")
-      vcJson = json.decode(inputValue)
-    else
-      print("[manifesto-actor] INPUT_VALIDATION: inputValue is table, using directly")
-      vcJson = inputValue
-    end
-    
-    print("[manifesto-actor] INPUT_VALIDATION: vcJson type:", type(vcJson))
-    
-    -- Support both VC and credentialSubject-only formats
-    local credentialSubject = vcJson.credentialSubject or vcJson
-    local inputId = credentialSubject.inputId
-    
-    print("[manifesto-actor] INPUT_VALIDATION: inputId:", inputId)
-    
-    -- Handle manifesto-specific validation
-    if inputId == "signManifesto" then
-      local signerName = credentialSubject.values and credentialSubject.values.signerName
-      local signerAddress = credentialSubject.values and credentialSubject.values.signerAddress
-      
-      print("[manifesto-actor] INPUT_VALIDATION: signerName:", signerName)
-      print("[manifesto-actor] INPUT_VALIDATION: signerAddress:", signerAddress)
-      
-      if not signerName or not signerAddress then
-        print("[manifesto-actor] INPUT_VALIDATION: missing name or address")
-        return { error = 'Missing signer name or address in manifesto signature' }
+    if inputValue and inputValue.credentialSubject and inputValue.credentialSubject.inputId == "signManifesto" then
+      local signerAddress = inputValue.credentialSubject.values and inputValue.credentialSubject.values.signerAddress
+      if signerAddress and Signers[signerAddress] then
+        return { error = "Duplicate signature from address: " .. signerAddress }
       end
-      
-      -- Check if signer already signed
-      local normalizedAddress = string.lower(signerAddress)
-      if Signers[normalizedAddress] then
-        print("[manifesto-actor] INPUT_VALIDATION: duplicate signer", normalizedAddress)
-        return { error = 'Signer has already signed the manifesto' }
-      end
-      
-      print("[manifesto-actor] INPUT_VALIDATION: validation passed")
     end
-    
     return { success = true }
   end)
-  
-  -- Post-input processing: Track signers after successful processing
-  BaseActor.registerExtension(BaseActor.ExtensionPoints.POST_INPUT_PROCESSING, function(context)
-    print("[manifesto-actor] POST_INPUT_PROCESSING extension called")
+
+  -- Post-input processing: Track new signers only after successful processing
+  ActorExtensions.registerExtension(ActorExtensions.ExtensionPoints.POST_INPUT_PROCESSING, function(context)
     local inputValue = context.data.inputValue
-    
-    print("[manifesto-actor] POST_INPUT_PROCESSING: inputValue type:", type(inputValue))
-    
-    -- Parse the input to extract signer information
-    local vcJson
-    if type(inputValue) == "string" then
-      print("[manifesto-actor] POST_INPUT_PROCESSING: inputValue is string, decoding...")
-      vcJson = json.decode(inputValue)
-    else
-      print("[manifesto-actor] POST_INPUT_PROCESSING: inputValue is table, using directly")
-      vcJson = inputValue
+    if inputValue and inputValue.credentialSubject and inputValue.credentialSubject.inputId == "signManifesto" then
+      local signerAddress = inputValue.credentialSubject.values and inputValue.credentialSubject.values.signerAddress
+      if signerAddress and not Signers[signerAddress] then
+        Signers[signerAddress] = {
+          address = signerAddress,
+          timestamp = context.timestamp
+        }
+        SignerCount = SignerCount + 1
+      end
     end
-    
-    local credentialSubject = vcJson.credentialSubject
-    local inputId = credentialSubject.inputId
-    
-    print("[manifesto-actor] POST_INPUT_PROCESSING: inputId:", inputId)
-    
-    -- Handle manifesto-specific post-processing
-    if inputId == "signManifesto" then
-      local signerName = credentialSubject.values.signerName
-      local signerAddress = credentialSubject.values.signerAddress
-      
-      print("[manifesto-actor] POST_INPUT_PROCESSING: Processing signer", signerName, signerAddress)
-      
-      -- Track the signer
-      local normalizedAddress = string.lower(signerAddress)
-      local inputValueStr = type(inputValue) == "string" and inputValue or json.encode(inputValue)
-      local signatureHash = crypto.digest.keccak256(inputValueStr).asHex()
-      
-      Signers[normalizedAddress] = {
-        name = signerName,
-        address = signerAddress,
-        timestamp = os.time(),
-        signatureHash = signatureHash
-      }
-      SignerCount = SignerCount + 1
-      print("[manifesto-actor] POST_INPUT_PROCESSING: Added signer", normalizedAddress, "SignerCount:", SignerCount)
-    end
-    
     return { success = true }
   end)
-  
+
   -- State query: Add manifesto-specific state to queries
-  BaseActor.registerExtension(BaseActor.ExtensionPoints.STATE_QUERY, function(context)
-    print("[manifesto-actor] STATE_QUERY extension called. SignerCount:", SignerCount)
+  ActorExtensions.registerExtension(ActorExtensions.ExtensionPoints.STATE_QUERY, function(context)
     return {
       SignerCount = SignerCount,
       Signers = Signers

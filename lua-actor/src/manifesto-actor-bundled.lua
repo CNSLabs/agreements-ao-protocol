@@ -8,9 +8,102 @@ local recover_public_key = secp256k1.recover_public_key
 local __modules = {}
 local __loaded = {}
 
--- Begin module: eip712.lua
-__modules["eip712"] = function()
-  if __loaded["eip712"] then return __loaded["eip712"] end
+-- Begin module: src/actor-extensions.lua
+__modules["src/actor-extensions"] = function()
+  if __loaded["src/actor-extensions"] then return __loaded["src/actor-extensions"] end
+-- Actor Extensions Library
+-- Provides extension point functionality for actor customization
+
+local json = require("json")
+
+-- Extension points for domain-specific functionality
+local ExtensionPoints = {
+  PRE_INIT = "pre_init",
+  POST_INIT = "post_init",
+  PRE_INPUT_PROCESSING = "pre_input_processing",
+  POST_INPUT_PROCESSING = "post_input_processing",
+  INPUT_VALIDATION = "input_validation",
+  STATE_QUERY = "state_query"
+}
+
+-- Extension registry
+local extensions = {}
+
+-- Register an extension for a specific extension point
+local function registerExtension(extensionPoint, handler)
+  if not extensions[extensionPoint] then
+    extensions[extensionPoint] = {}
+  end
+  table.insert(extensions[extensionPoint], handler)
+end
+
+-- Execute all registered extensions for a given point
+local function executeExtensions(extensionPoint, context)
+  local handlers = extensions[extensionPoint] or {}
+  local results = {}
+  
+  for i, handler in ipairs(handlers) do
+    local success, result = pcall(handler, context)
+    if success then
+      table.insert(results, result)
+    else
+      print("[actor-extensions] Extension execution failed:", tostring(result))
+      table.insert(results, { error = result })
+    end
+  end
+  
+  return results
+end
+
+-- Context builder for extension execution
+local function buildContext(msg, stateMachine, customData)
+  return {
+    msg = msg,
+    stateMachine = stateMachine,
+    data = customData or {},
+    timestamp = os.time()
+  }
+end
+
+-- Helper function to check for errors in extension results
+local function checkExtensionErrors(results, errorCallback)
+  for _, result in ipairs(results) do
+    if result and result.error then
+      errorCallback(result.error)
+      return true -- error found
+    end
+  end
+  return false -- no errors
+end
+
+-- Helper function to merge extension results into a base state
+local function mergeExtensionResults(baseState, results)
+  for _, result in ipairs(results) do
+    if result and type(result) == "table" then
+      for key, value in pairs(result) do
+        baseState[key] = value
+      end
+    end
+  end
+  return baseState
+end
+
+
+  __loaded["src/actor-extensions"] = {
+  ExtensionPoints = ExtensionPoints,
+  registerExtension = registerExtension,
+  executeExtensions = executeExtensions,
+  buildContext = buildContext,
+  checkExtensionErrors = checkExtensionErrors,
+  mergeExtensionResults = mergeExtensionResults
+}
+  return __loaded["src/actor-extensions"]
+end
+-- End module: src/actor-extensions.lua
+
+-- Begin module: src/eip712.lua
+__modules["src/eip712"] = function()
+  if __loaded["src/eip712"] then return __loaded["src/eip712"] end
 local crypto = require(".crypto.init")
 local Array = require(".crypto.util.array")
 
@@ -442,7 +535,7 @@ local function createDomainSeparator(domain, types)
 end
 
 
-  __loaded["eip712"] = {
+  __loaded["src/eip712"] = {
     createDomainSeparator = createDomainSeparator,
     hashStruct = hashStruct,
     getSigningInput = getSigningInput,
@@ -450,13 +543,13 @@ end
     typeHash = typeHash,
     abiEncode = abiEncode
 }
-  return __loaded["eip712"]
+  return __loaded["src/eip712"]
 end
--- End module: eip712.lua
+-- End module: src/eip712.lua
 
--- Begin module: vc-validator.lua
-__modules["vc-validator"] = function()
-  if __loaded["vc-validator"] then return __loaded["vc-validator"] end
+-- Begin module: src/vc-validator.lua
+__modules["src/vc-validator"] = function()
+  if __loaded["src/vc-validator"] then return __loaded["src/vc-validator"] end
 -- Explicitly importing secp256k1 and exposing recover_public_key, which is a global var in our custom AO module.
 
 local recover_public_key = recover_public_key
@@ -465,7 +558,7 @@ local json = require("json")
 local Array = require(".crypto.util.array")
 local crypto = require(".crypto.init")
 
-local eip712 = __modules["eip712"]()
+local eip712 = __modules["src/eip712"]()
 
 local function strip_hex_prefix(hex_str)
   if hex_str:sub(1, 2) == "0x" then
@@ -564,16 +657,16 @@ local function vc_validate(vc)
 end
 
 
-  __loaded["vc-validator"] = {
+  __loaded["src/vc-validator"] = {
   validate = vc_validate,
 }
-  return __loaded["vc-validator"]
+  return __loaded["src/vc-validator"]
 end
--- End module: vc-validator.lua
+-- End module: src/vc-validator.lua
 
--- Begin module: variables/validation.lua
-__modules["variables/validation"] = function()
-  if __loaded["variables/validation"] then return __loaded["variables/validation"] end
+-- Begin module: src/variables/validation.lua
+__modules["src/variables/validation"] = function()
+  if __loaded["src/variables/validation"] then return __loaded["src/variables/validation"] end
 -- Shared validation module for both InputVerifier and VariableManager
 local ValidationModule = {}
 
@@ -636,16 +729,16 @@ function ValidationModule.validateValue(value, validation, fieldName)
 end
 
 
-  __loaded["variables/validation"] = ValidationModule
-  return __loaded["variables/validation"]
+  __loaded["src/variables/validation"] = ValidationModule
+  return __loaded["src/variables/validation"]
 end
--- End module: variables/validation.lua
+-- End module: src/variables/validation.lua
 
--- Begin module: variables/variable_manager.lua
-__modules["variables/variable_manager"] = function()
-  if __loaded["variables/variable_manager"] then return __loaded["variables/variable_manager"] end
-local VcValidator = __modules["vc-validator"]()
-local ValidationModule = __modules["variables/validation"]()
+-- Begin module: src/variables/variable_manager.lua
+__modules["src/variables/variable_manager"] = function()
+  if __loaded["src/variables/variable_manager"] then return __loaded["src/variables/variable_manager"] end
+local VcValidator = __modules["src/vc-validator"]()
+local ValidationModule = __modules["src/variables/validation"]()
 local VariableManager = {}
 
 function VariableManager.new(variables)
@@ -785,14 +878,14 @@ function VariableManager:tryResolveExactStringAsVariableObject(possibleVariableR
 end
 
 
-  __loaded["variables/variable_manager"] = VariableManager
-  return __loaded["variables/variable_manager"]
+  __loaded["src/variables/variable_manager"] = VariableManager
+  return __loaded["src/variables/variable_manager"]
 end
--- End module: variables/variable_manager.lua
+-- End module: src/variables/variable_manager.lua
 
--- Begin module: mock-oracle.lua
-__modules["mock-oracle"] = function()
-  if __loaded["mock-oracle"] then return __loaded["mock-oracle"] end
+-- Begin module: src/mock-oracle.lua
+__modules["src/mock-oracle"] = function()
+  if __loaded["src/mock-oracle"] then return __loaded["src/mock-oracle"] end
 -- MockOracle: A class that simulates an oracle by storing and retrieving data
 -- associated with transaction hashes
 local json = require("json")
@@ -857,14 +950,14 @@ function MockOracle:getAllTxHashes()
 end
 
 
-  __loaded["mock-oracle"] = MockOracle
-  return __loaded["mock-oracle"]
+  __loaded["src/mock-oracle"] = MockOracle
+  return __loaded["src/mock-oracle"]
 end
--- End module: mock-oracle.lua
+-- End module: src/mock-oracle.lua
 
--- Begin module: utils/table_utils.lua
-__modules["utils/table_utils"] = function()
-  if __loaded["utils/table_utils"] then return __loaded["utils/table_utils"] end
+-- Begin module: src/utils/table_utils.lua
+__modules["src/utils/table_utils"] = function()
+  if __loaded["src/utils/table_utils"] then return __loaded["src/utils/table_utils"] end
 -- Table utility functions
 
 -- Helper function to perform deep comparison of two values
@@ -1023,26 +1116,26 @@ local function printTable(t, indent, visited)
 end
 
 
-  __loaded["utils/table_utils"] = {
+  __loaded["src/utils/table_utils"] = {
     deepCompare = deepCompare,
     replaceVariableReferences = replaceVariableReferences,
     replaceContractReferences = replaceContractReferences,
     printTable = printTable
 }
-  return __loaded["utils/table_utils"]
+  return __loaded["src/utils/table_utils"]
 end
--- End module: utils/table_utils.lua
+-- End module: src/utils/table_utils.lua
 
--- Begin module: verifiers/evm_transaction_input_verifier.lua
-__modules["verifiers/evm_transaction_input_verifier"] = function()
-  if __loaded["verifiers/evm_transaction_input_verifier"] then return __loaded["verifiers/evm_transaction_input_verifier"] end
+-- Begin module: src/verifiers/evm_transaction_input_verifier.lua
+__modules["src/verifiers/evm_transaction_input_verifier"] = function()
+  if __loaded["src/verifiers/evm_transaction_input_verifier"] then return __loaded["src/verifiers/evm_transaction_input_verifier"] end
 
 local crypto = require(".crypto.init")
 local json = require("json")
 local base64 = require(".base64")
--- local MockOracle = __modules["mock-oracle"]()  -- Import the MockOracle module
-local replaceVariableReferences = __modules["utils/table_utils"]().replaceVariableReferences
-local replaceContractReferences = __modules["utils/table_utils"]().replaceContractReferences
+-- local MockOracle = __modules["src/mock-oracle"]()  -- Import the MockOracle module
+local replaceVariableReferences = __modules["src/utils/table_utils"]().replaceVariableReferences
+local replaceContractReferences = __modules["src/utils/table_utils"]().replaceContractReferences
 
 -- Helper functions
 -- EIP-712 specific functions
@@ -1784,19 +1877,19 @@ end
 
 -- Return the verifier function
 
-  __loaded["verifiers/evm_transaction_input_verifier"] = verifyEVMTransaction
-  return __loaded["verifiers/evm_transaction_input_verifier"]
+  __loaded["src/verifiers/evm_transaction_input_verifier"] = verifyEVMTransaction
+  return __loaded["src/verifiers/evm_transaction_input_verifier"]
 end
--- End module: verifiers/evm_transaction_input_verifier.lua
+-- End module: src/verifiers/evm_transaction_input_verifier.lua
 
--- Begin module: verifiers/input_verifier.lua
-__modules["verifiers/input_verifier"] = function()
-  if __loaded["verifiers/input_verifier"] then return __loaded["verifiers/input_verifier"] end
+-- Begin module: src/verifiers/input_verifier.lua
+__modules["src/verifiers/input_verifier"] = function()
+  if __loaded["src/verifiers/input_verifier"] then return __loaded["src/verifiers/input_verifier"] end
 local json = require("json")
 local crypto = require(".crypto")
-local VcValidator = __modules["vc-validator"]()
-local FieldValidator = __modules["variables/validation"]()
-local verifyEVMTransactionInputVerifier = __modules["verifiers/evm_transaction_input_verifier"]()
+local VcValidator = __modules["src/vc-validator"]()
+local FieldValidator = __modules["src/variables/validation"]()
+local verifyEVMTransactionInputVerifier = __modules["src/verifiers/evm_transaction_input_verifier"]()
 
 local ETHEREUM_ADDRESS_REGEX = "^0x(%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x)$"
 
@@ -2060,17 +2153,17 @@ local function verify(input, value, dfsm, validate)
 end
 
 
-  __loaded["verifiers/input_verifier"] = {
+  __loaded["src/verifiers/input_verifier"] = {
     verify = verify,
     ValidationUtils = ValidationUtils,
 }
-  return __loaded["verifiers/input_verifier"]
+  return __loaded["src/verifiers/input_verifier"]
 end
--- End module: verifiers/input_verifier.lua
+-- End module: src/verifiers/input_verifier.lua
 
--- Begin module: contracts/contract_manager.lua
-__modules["contracts/contract_manager"] = function()
-  if __loaded["contracts/contract_manager"] then return __loaded["contracts/contract_manager"] end
+-- Begin module: src/contracts/contract_manager.lua
+__modules["src/contracts/contract_manager"] = function()
+  if __loaded["src/contracts/contract_manager"] then return __loaded["src/contracts/contract_manager"] end
 local ContractManager = {}
 
 local crypto = require(".crypto.init")
@@ -2313,20 +2406,20 @@ function ContractManager:getAllContracts()
 end
 
 
-  __loaded["contracts/contract_manager"] = ContractManager
-  return __loaded["contracts/contract_manager"]
+  __loaded["src/contracts/contract_manager"] = ContractManager
+  return __loaded["src/contracts/contract_manager"]
 end
--- End module: contracts/contract_manager.lua
+-- End module: src/contracts/contract_manager.lua
 
--- Begin module: dfsm.lua
-__modules["dfsm"] = function()
-  if __loaded["dfsm"] then return __loaded["dfsm"] end
+-- Begin module: src/dfsm.lua
+__modules["src/dfsm"] = function()
+  if __loaded["src/dfsm"] then return __loaded["src/dfsm"] end
 -- DFSM (Deterministic Finite State Machine) implementation
-local VariableManager = __modules["variables/variable_manager"]()
-local InputVerifier = __modules["verifiers/input_verifier"]()
+local VariableManager = __modules["src/variables/variable_manager"]()
+local InputVerifier = __modules["src/verifiers/input_verifier"]()
 local json = require("json")
-local VcValidator = __modules["vc-validator"]()
-local ContractManager = __modules["contracts/contract_manager"]()
+local VcValidator = __modules["src/vc-validator"]()
+local ContractManager = __modules["src/contracts/contract_manager"]()
 local base64 = require(".base64")
 local crypto = require(".crypto.init")
 
@@ -2778,26 +2871,24 @@ end
 
 -- Export the DFSM module
 
-  __loaded["dfsm"] = {
+  __loaded["src/dfsm"] = {
     new = DFSM.new,
 }
-  return __loaded["dfsm"]
+  return __loaded["src/dfsm"]
 end
--- End module: dfsm.lua
+-- End module: src/dfsm.lua
 
--- Begin module: apoc-v2.lua
-__modules["apoc-v2"] = function()
-  if __loaded["apoc-v2"] then return __loaded["apoc-v2"] end
+-- Begin module: src/apoc-v2.lua
+__modules["src/apoc-v2"] = function()
+  if __loaded["src/apoc-v2"] then return __loaded["src/apoc-v2"] end
 
+local ActorExtensions = __modules["src/actor-extensions"]()
 
 local json = require("json")
-local Array = require(".crypto.util.array")
 local crypto = require(".crypto.init")
-local utils = require(".utils")
 local base64 = require(".base64")
 
-local DFSM = __modules["dfsm"]()
-
+local DFSM = __modules["src/dfsm"]()
 
 -- BEGIN: actor's internal state
 StateMachine = StateMachine or nil
@@ -2806,62 +2897,11 @@ DocumentHash = DocumentHash or nil
 DocumentOwner = DocumentOwner or nil
 -- END: actor's internal state
 
--- Extension points for domain-specific functionality
-local ExtensionPoints = {
-  PRE_INIT = "pre_init",
-  POST_INIT = "post_init",
-  PRE_INPUT_PROCESSING = "pre_input_processing",
-  POST_INPUT_PROCESSING = "post_input_processing",
-  INPUT_VALIDATION = "input_validation",
-  STATE_QUERY = "state_query"
-}
-
--- Extension registry
-local extensions = {}
-
--- Register an extension for a specific extension point
-local function registerExtension(extensionPoint, handler)
-  if not extensions[extensionPoint] then
-    extensions[extensionPoint] = {}
-  end
-  table.insert(extensions[extensionPoint], handler)
-end
-
--- Execute all registered extensions for a given point
-local function executeExtensions(extensionPoint, context)
-  local handlers = extensions[extensionPoint] or {}
-  local results = {}
-  
-  for i, handler in ipairs(handlers) do
-    local success, result = pcall(handler, context)
-    if success then
-      table.insert(results, result)
-    else
-      print("[apoc-v2] Extension execution failed:", tostring(result))
-      table.insert(results, { error = result })
-    end
-  end
-  
-  return results
-end
-
--- Context builder for extension execution
-local function buildContext(msg, stateMachine, customData)
-  return {
-    msg = msg,
-    stateMachine = stateMachine,
-    data = customData or {},
-    timestamp = os.time()
-  }
-end
-
 local function resetState()
   StateMachine = nil
   Document = nil
   DocumentHash = nil
   DocumentOwner = nil
-  -- Don't clear extensions - they should persist across resets
-  -- extensions = {}
 end
 
 local function reply_error(msg, error)
@@ -2873,8 +2913,6 @@ local function reply_error(msg, error)
     }
   })
   print("Error during execution: " .. error)
-  -- throwing errors seems to somehow get in the way of msg.reply going through, even though it happens strictly after...
-  -- error(error_msg)
 end
 
 -- Enhanced input processor with extension support
@@ -2893,31 +2931,25 @@ local function processInputWithExtensions(msg)
   local inputValue = Data.inputValue
   
   -- Build context for extensions
-  local context = buildContext(msg, StateMachine, {
+  local context = ActorExtensions.buildContext(msg, StateMachine, {
     inputValue = inputValue,
     inputData = Data
   })
   
   -- Execute pre-processing extensions
-  local preResults = executeExtensions(ExtensionPoints.PRE_INPUT_PROCESSING, context)
+  local preResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.PRE_INPUT_PROCESSING, context)
   
   -- Check for errors in pre-processing
-  for _, result in ipairs(preResults) do
-    if result.error then
-      reply_error(msg, result.error)
-      return false
-    end
+  if ActorExtensions.checkExtensionErrors(preResults, function(error) reply_error(msg, error) end) then
+    return false
   end
   
   -- Execute input validation extensions
-  local validationResults = executeExtensions(ExtensionPoints.INPUT_VALIDATION, context)
+  local validationResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.INPUT_VALIDATION, context)
   
   -- Check for validation errors
-  for _, result in ipairs(validationResults) do
-    if result.error then
-      reply_error(msg, result.error)
-      return false
-    end
+  if ActorExtensions.checkExtensionErrors(validationResults, function(error) reply_error(msg, error) end) then
+    return false
   end
   
   -- Process through base DFSM
@@ -2929,14 +2961,11 @@ local function processInputWithExtensions(msg)
   end
   
   -- Execute post-processing extensions
-  local postResults = executeExtensions(ExtensionPoints.POST_INPUT_PROCESSING, context)
+  local postResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.POST_INPUT_PROCESSING, context)
   
   -- Check for errors in post-processing
-  for _, result in ipairs(postResults) do
-    if result.error then
-      reply_error(msg, result.error)
-      return false
-    end
+  if ActorExtensions.checkExtensionErrors(postResults, function(error) reply_error(msg, error) end) then
+    return false
   end
   
   msg.reply({ Data = { success = true } })
@@ -2979,15 +3008,12 @@ local function initializeWithExtensions(msg)
   end
   
   -- Execute pre-init extensions
-  local preContext = buildContext(msg, nil, { document = agreementJson })
-  local preResults = executeExtensions(ExtensionPoints.PRE_INIT, preContext)
+  local preContext = ActorExtensions.buildContext(msg, nil, { document = agreementJson })
+  local preResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.PRE_INIT, preContext)
   
   -- Check for pre-init errors
-  for _, result in ipairs(preResults) do
-    if result and result.error then
-      reply_error(msg, result.error)
-      return false
-    end
+  if ActorExtensions.checkExtensionErrors(preResults, function(error) reply_error(msg, error) end) then
+    return false
   end
   
   -- Extract initial variable values for DFSM (fallback to document.variables if not provided)
@@ -3016,15 +3042,12 @@ local function initializeWithExtensions(msg)
   StateMachine = dfsm
   
   -- Execute post-init extensions
-  local postContext = buildContext(msg, StateMachine, { document = Document })
-  local postResults = executeExtensions(ExtensionPoints.POST_INIT, postContext)
+  local postContext = ActorExtensions.buildContext(msg, StateMachine, { document = Document })
+  local postResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.POST_INIT, postContext)
   
   -- Check for post-init errors
-  for _, result in ipairs(postResults) do
-    if result and result.error then
-      reply_error(msg, result.error)
-      return false
-    end
+  if ActorExtensions.checkExtensionErrors(postResults, function(error) reply_error(msg, error) end) then
+    return false
   end
 
   msg.reply({ Data = { success = true } })
@@ -3045,20 +3068,13 @@ local function getStateWithExtensions(msg)
     Inputs = StateMachine:getInputs(),
     ReceivedInputs = StateMachine:getReceivedInputs(),
   }
-  -- print(state)
   
   -- Execute state query extensions
-  local context = buildContext(msg, StateMachine, { baseState = baseState })
-  local queryResults = executeExtensions(ExtensionPoints.STATE_QUERY, context)
+  local context = ActorExtensions.buildContext(msg, StateMachine, { baseState = baseState })
+  local queryResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.STATE_QUERY, context)
   
   -- Merge extension results into base state
-  for _, result in ipairs(queryResults) do
-    if result and type(result) == "table" then
-      for key, value in pairs(result) do
-        baseState[key] = value
-      end
-    end
-  end
+  baseState = ActorExtensions.mergeExtensionResults(baseState, queryResults)
   
   msg.reply({ Data = baseState })
 end
@@ -3083,7 +3099,6 @@ Handlers.add(
     msg.reply({ Data = {
         Document = Document,
         DocumentHash = DocumentHash,
-        -- DocumentOwner = DocumentOwner,
     }})
   end
 )
@@ -3096,32 +3111,32 @@ Handlers.add(
 
 -- Export the extensible base actor
 
-  __loaded["apoc-v2"] = { 
+  __loaded["src/apoc-v2"] = { 
   Handlers = Handlers, 
   resetState = resetState,
-  -- Extension framework
-  ExtensionPoints = ExtensionPoints,
-  registerExtension = registerExtension,
-  executeExtensions = executeExtensions,
-  buildContext = buildContext,
+  -- Extension framework (delegated to ActorExtensions library)
+  ExtensionPoints = ActorExtensions.ExtensionPoints,
+  registerExtension = ActorExtensions.registerExtension,
+  executeExtensions = ActorExtensions.executeExtensions,
+  buildContext = ActorExtensions.buildContext,
   -- Utility functions for extensions
   reply_error = reply_error
 }
-  return __loaded["apoc-v2"]
+  return __loaded["src/apoc-v2"]
 end
--- End module: apoc-v2.lua
+-- End module: src/apoc-v2.lua
 
 -- Custom require function
 local function __require(moduleName)
   return __modules[moduleName]()
 end
 
--- Main actor file: manifesto-actor.lua
-local json = require("json")
-local crypto = require(".crypto.init")
+-- Main actor file: src/manifesto-actor.lua
+-- Manifesto Actor
+-- Extends the base actor with manifesto-specific functionality
 
--- Import the extensible base actor
-local BaseActor = __modules["apoc-v2"]()
+local BaseActor = __modules["src/apoc-v2"]()
+local ActorExtensions = __modules["src/actor-extensions"]()
 local Handlers = BaseActor.Handlers
 
 -- BEGIN: manifesto-specific state
@@ -3130,128 +3145,45 @@ SignerCount = SignerCount or 0
 -- END: manifesto-specific state
 
 local function resetState()
-  print("[manifesto-actor] resetState called")
   -- Reset base state
   BaseActor.resetState()
   -- Reset manifesto-specific state
   Signers = {}
   SignerCount = 0
-  print("[manifesto-actor] Signers and SignerCount reset")
 end
 
 -- Manifesto-specific extension functions
 local function setupManifestoExtensions()
-  print("[manifesto-actor] Registering extensions...")
-  -- Pre-init: Initialize manifesto-specific state
-  BaseActor.registerExtension(BaseActor.ExtensionPoints.PRE_INIT, function(context)
-    print("[manifesto-actor] PRE_INIT extension called")
-    Signers = {}
-    SignerCount = 0
-    print("[manifesto-actor] PRE_INIT: Signers and SignerCount reset")
-    return { success = true }
-  end)
-  
-  -- Input validation: Validate manifesto signatures
-  BaseActor.registerExtension(BaseActor.ExtensionPoints.INPUT_VALIDATION, function(context)
-    print("[manifesto-actor] INPUT_VALIDATION extension called")
+  -- Pre-input processing: Only check for duplicate signatures
+  ActorExtensions.registerExtension(ActorExtensions.ExtensionPoints.PRE_INPUT_PROCESSING, function(context)
     local inputValue = context.data.inputValue
-    
-    print("[manifesto-actor] INPUT_VALIDATION: inputValue type:", type(inputValue))
-    
-    -- Parse the input to extract signer information
-    local vcJson
-    if type(inputValue) == "string" then
-      print("[manifesto-actor] INPUT_VALIDATION: inputValue is string, decoding...")
-      vcJson = json.decode(inputValue)
-    else
-      print("[manifesto-actor] INPUT_VALIDATION: inputValue is table, using directly")
-      vcJson = inputValue
-    end
-    
-    print("[manifesto-actor] INPUT_VALIDATION: vcJson type:", type(vcJson))
-    
-    -- Support both VC and credentialSubject-only formats
-    local credentialSubject = vcJson.credentialSubject or vcJson
-    local inputId = credentialSubject.inputId
-    
-    print("[manifesto-actor] INPUT_VALIDATION: inputId:", inputId)
-    
-    -- Handle manifesto-specific validation
-    if inputId == "signManifesto" then
-      local signerName = credentialSubject.values and credentialSubject.values.signerName
-      local signerAddress = credentialSubject.values and credentialSubject.values.signerAddress
-      
-      print("[manifesto-actor] INPUT_VALIDATION: signerName:", signerName)
-      print("[manifesto-actor] INPUT_VALIDATION: signerAddress:", signerAddress)
-      
-      if not signerName or not signerAddress then
-        print("[manifesto-actor] INPUT_VALIDATION: missing name or address")
-        return { error = 'Missing signer name or address in manifesto signature' }
+    if inputValue and inputValue.credentialSubject and inputValue.credentialSubject.inputId == "signManifesto" then
+      local signerAddress = inputValue.credentialSubject.values and inputValue.credentialSubject.values.signerAddress
+      if signerAddress and Signers[signerAddress] then
+        return { error = "Duplicate signature from address: " .. signerAddress }
       end
-      
-      -- Check if signer already signed
-      local normalizedAddress = string.lower(signerAddress)
-      if Signers[normalizedAddress] then
-        print("[manifesto-actor] INPUT_VALIDATION: duplicate signer", normalizedAddress)
-        return { error = 'Signer has already signed the manifesto' }
-      end
-      
-      print("[manifesto-actor] INPUT_VALIDATION: validation passed")
     end
-    
     return { success = true }
   end)
-  
-  -- Post-input processing: Track signers after successful processing
-  BaseActor.registerExtension(BaseActor.ExtensionPoints.POST_INPUT_PROCESSING, function(context)
-    print("[manifesto-actor] POST_INPUT_PROCESSING extension called")
+
+  -- Post-input processing: Track new signers only after successful processing
+  ActorExtensions.registerExtension(ActorExtensions.ExtensionPoints.POST_INPUT_PROCESSING, function(context)
     local inputValue = context.data.inputValue
-    
-    print("[manifesto-actor] POST_INPUT_PROCESSING: inputValue type:", type(inputValue))
-    
-    -- Parse the input to extract signer information
-    local vcJson
-    if type(inputValue) == "string" then
-      print("[manifesto-actor] POST_INPUT_PROCESSING: inputValue is string, decoding...")
-      vcJson = json.decode(inputValue)
-    else
-      print("[manifesto-actor] POST_INPUT_PROCESSING: inputValue is table, using directly")
-      vcJson = inputValue
+    if inputValue and inputValue.credentialSubject and inputValue.credentialSubject.inputId == "signManifesto" then
+      local signerAddress = inputValue.credentialSubject.values and inputValue.credentialSubject.values.signerAddress
+      if signerAddress and not Signers[signerAddress] then
+        Signers[signerAddress] = {
+          address = signerAddress,
+          timestamp = context.timestamp
+        }
+        SignerCount = SignerCount + 1
+      end
     end
-    
-    local credentialSubject = vcJson.credentialSubject
-    local inputId = credentialSubject.inputId
-    
-    print("[manifesto-actor] POST_INPUT_PROCESSING: inputId:", inputId)
-    
-    -- Handle manifesto-specific post-processing
-    if inputId == "signManifesto" then
-      local signerName = credentialSubject.values.signerName
-      local signerAddress = credentialSubject.values.signerAddress
-      
-      print("[manifesto-actor] POST_INPUT_PROCESSING: Processing signer", signerName, signerAddress)
-      
-      -- Track the signer
-      local normalizedAddress = string.lower(signerAddress)
-      local inputValueStr = type(inputValue) == "string" and inputValue or json.encode(inputValue)
-      local signatureHash = crypto.digest.keccak256(inputValueStr).asHex()
-      
-      Signers[normalizedAddress] = {
-        name = signerName,
-        address = signerAddress,
-        timestamp = os.time(),
-        signatureHash = signatureHash
-      }
-      SignerCount = SignerCount + 1
-      print("[manifesto-actor] POST_INPUT_PROCESSING: Added signer", normalizedAddress, "SignerCount:", SignerCount)
-    end
-    
     return { success = true }
   end)
-  
+
   -- State query: Add manifesto-specific state to queries
-  BaseActor.registerExtension(BaseActor.ExtensionPoints.STATE_QUERY, function(context)
-    print("[manifesto-actor] STATE_QUERY extension called. SignerCount:", SignerCount)
+  ActorExtensions.registerExtension(ActorExtensions.ExtensionPoints.STATE_QUERY, function(context)
     return {
       SignerCount = SignerCount,
       Signers = Signers
