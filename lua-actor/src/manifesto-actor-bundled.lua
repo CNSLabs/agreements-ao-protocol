@@ -2821,22 +2821,18 @@ local extensions = {}
 
 -- Register an extension for a specific extension point
 local function registerExtension(extensionPoint, handler)
-  print("[apoc-v2] Registering extension for point:", extensionPoint)
   if not extensions[extensionPoint] then
     extensions[extensionPoint] = {}
   end
   table.insert(extensions[extensionPoint], handler)
-  print("[apoc-v2] Total handlers for", extensionPoint, "=", #extensions[extensionPoint])
 end
 
 -- Execute all registered extensions for a given point
 local function executeExtensions(extensionPoint, context)
-  print("[apoc-v2] Executing extensions for point:", extensionPoint)
   local handlers = extensions[extensionPoint] or {}
   local results = {}
   
   for i, handler in ipairs(handlers) do
-    print("[apoc-v2] Executing handler #", i, "for", extensionPoint)
     local success, result = pcall(handler, context)
     if success then
       table.insert(results, result)
@@ -2896,8 +2892,6 @@ local function processInputWithExtensions(msg)
   end
   local inputValue = Data.inputValue
   
-  print("[apoc-v2] processInputWithExtensions: inputValue type:", type(inputValue))
-  
   -- Build context for extensions
   local context = buildContext(msg, StateMachine, {
     inputValue = inputValue,
@@ -2926,11 +2920,8 @@ local function processInputWithExtensions(msg)
     end
   end
   
-  print("[apoc-v2] processInputWithExtensions: Processing through DFSM...")
   -- Process through base DFSM
   local isValid, errorMsg = StateMachine:processInput(inputValue, true)
-  
-  print("[apoc-v2] processInputWithExtensions: DFSM result - isValid:", isValid, "errorMsg:", errorMsg)
   
   if not isValid then
     reply_error(msg, errorMsg or 'Failed to process input')
@@ -2954,7 +2945,6 @@ end
 
 -- Enhanced initialization with extension support
 local function initializeWithExtensions(msg)
-  print("[apoc-v2] Init handler called")
   local Data
   if type(msg.Data) == "string" then
     Data = json.decode(msg.Data)
@@ -2984,7 +2974,6 @@ local function initializeWithExtensions(msg)
   end
 
   if Document then
-    print("[apoc-v2] Document already initialized!")
     reply_error(msg, 'Document is already initialized and cannot be overwritten')
     return false
   end
@@ -2996,7 +2985,6 @@ local function initializeWithExtensions(msg)
   -- Check for pre-init errors
   for _, result in ipairs(preResults) do
     if result and result.error then
-      print("[apoc-v2] Pre-init extension error:", result.error)
       reply_error(msg, result.error)
       return false
     end
@@ -3018,7 +3006,6 @@ local function initializeWithExtensions(msg)
   local dfsm = DFSM.new(document, true, initialValues)
 
   if not dfsm then
-    print("[apoc-v2] DFSM.new returned nil!")
     reply_error(msg, 'Invalid agreement document')
     return false
   end
@@ -3026,7 +3013,6 @@ local function initializeWithExtensions(msg)
   Document = json.decode(agreementJson)
   -- Calculate document hash from the original wrapped VC document
   DocumentHash = crypto.digest.keccak256(document).asHex()
-  print("[apoc-v2] Document hash set to:", DocumentHash)
   StateMachine = dfsm
   
   -- Execute post-init extensions
@@ -3036,7 +3022,6 @@ local function initializeWithExtensions(msg)
   -- Check for post-init errors
   for _, result in ipairs(postResults) do
     if result and result.error then
-      print("[apoc-v2] Post-init extension error:", result.error)
       reply_error(msg, result.error)
       return false
     end
