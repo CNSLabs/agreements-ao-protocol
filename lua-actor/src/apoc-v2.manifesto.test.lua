@@ -2,96 +2,94 @@ require("setup")
 
 local TestUtils = require("test-utils")
 local json = require("json")
-local crypto = require(".crypto.init")
-local DFSM = require("dfsm")
 
--- Manifesto-specific state
-Signers = Signers or {} -- Track signers: {address -> {name, timestamp, signatureHash}}
-SignerCount = SignerCount or 0
-
-local function resetState()
-  Signers = {}
-  SignerCount = 0
-end
-
+local apoc = require("manifesto-actor-bundled")
+local Handlers = apoc.Handlers
+local resetState = apoc.resetState
+-- Reset the state before each test to make sure we start fresh
 resetState()
 
+-- Load all test input files
 local agreementDoc = TestUtils.loadInputDoc("./tests/manifesto/wrapped/manifesto.wrapped.json")
 local inputAlice = TestUtils.loadInputDoc("./tests/manifesto/wrapped/input-alice-signature.wrapped.json")
 local inputBob = TestUtils.loadInputDoc("./tests/manifesto/wrapped/input-bob-signature.wrapped.json")
 local inputActivate = TestUtils.loadInputDoc("./tests/manifesto/wrapped/input-activate.wrapped.json")
 local inputDeactivate = TestUtils.loadInputDoc("./tests/manifesto/wrapped/input-deactivate.wrapped.json")
 
-local aliceJson = json.decode(inputAlice)
-local bobJson = json.decode(inputBob)
+-- Initialize the agreement
+local response = Handlers.evaluate({
+    Tags = { Action = 'Init' },
+    Data = agreementDoc,
+    reply = function (response)
+      local success = response.Data.success
+      print(TestUtils.formatResult(success) .. " Init message processing")
+      assert(success == true)
+    end
+    },
+    { envKey = "envValue" }
+)
 
-local dfsm = DFSM.new(agreementDoc, true)
+-- Step 1: Alice signature
+response = Handlers.evaluate({
+    Tags = { Action = 'ProcessInput' },
+    Data = json.encode({
+        inputValue = json.decode(inputAlice)
+    }),
+    reply = function (response)
+      local success = response.Data.success
+      print(TestUtils.formatResult(success) .. " Alice signature processing")
+      assert(success == true)
+    end
+    },
+    { envKey = "envValue" }
+)
 
-local currentState = dfsm:getCurrentState()
-local isActive = currentState.id == "ACTIVE"
-print(TestUtils.formatResult(isActive) .. " Initial state is ACTIVE")
-assert(isActive == true)
+-- Step 2: Bob signature
+response = Handlers.evaluate({
+    Tags = { Action = 'ProcessInput' },
+    Data = json.encode({
+        inputValue = json.decode(inputBob)
+    }),
+    reply = function (response)
+      local success = response.Data.success
+      print(TestUtils.formatResult(success) .. " Bob signature processing")
+      assert(success == true)
+    end
+    },
+    { envKey = "envValue" }
+)
 
-local aliceInput = json.decode(inputAlice)
-local aliceSuccess, aliceError = dfsm:processInput(aliceInput, false)
-print(TestUtils.formatResult(aliceSuccess) .. " Alice signature processing")
-assert(aliceSuccess == true)
+-- Step 3: Test duplicate signature rejection
+response = Handlers.evaluate({
+    Tags = { Action = 'ProcessInput' },
+    Data = json.encode({
+        inputValue = json.decode(inputAlice)
+    }),
+    reply = function (response)
+      local success = response.Data.success
+      print(TestUtils.formatResult(not success) .. " Alice duplicate signature processing")
+      assert(success == false)
+    end
+    },
+    { envKey = "envValue" }
+)
 
-local aliceAddress = aliceInput.credentialSubject.values.signerAddress
-local aliceName = aliceInput.credentialSubject.values.signerName
-Signers[string.lower(aliceAddress)] = {
-  name = aliceName,
-  address = aliceAddress,
-  timestamp = os.time(),
-  signatureHash = crypto.digest.keccak256(inputAlice).asHex()
-}
-SignerCount = SignerCount + 1
+-- Step 4: Deactivate manifesto
+response = Handlers.evaluate({
+    Tags = { Action = 'ProcessInput' },
+    Data = json.encode({
+        inputValue = json.decode(inputDeactivate)
+    }),
+    reply = function (response)
+      local success = response.Data.success
+      print(TestUtils.formatResult(success) .. " Deactivate manifesto processing")
+      assert(success == true)
+    end
+    },
+    { envKey = "envValue" }
+)
 
-local aliceFound = Signers[string.lower(aliceAddress)] ~= nil
-print(TestUtils.formatResult(aliceFound) .. " Alice is tracked in signers")
-assert(aliceFound == true)
-assert(SignerCount == 1, "Expected 1 signer, got " .. tostring(SignerCount))
-
-local bobInput = json.decode(inputBob)
-local bobSuccess, bobError = dfsm:processInput(bobInput, false)
-print(TestUtils.formatResult(bobSuccess) .. " Bob signature processing")
-assert(bobSuccess == true)
-
-local bobAddress = bobInput.credentialSubject.values.signerAddress
-local bobName = bobInput.credentialSubject.values.signerName
-Signers[string.lower(bobAddress)] = {
-  name = bobName,
-  address = bobAddress,
-  timestamp = os.time(),
-  signatureHash = crypto.digest.keccak256(inputBob).asHex()
-}
-SignerCount = SignerCount + 1
-
-local aliceFound2 = Signers[string.lower(aliceAddress)] ~= nil
-local bobFound = Signers[string.lower(bobAddress)] ~= nil
-local bothFound = aliceFound2 and bobFound
-print(TestUtils.formatResult(bothFound) .. " Both Alice and Bob are tracked in signers")
-assert(bothFound == true)
-assert(SignerCount == 2, "Expected 2 signers, got " .. tostring(SignerCount))
-
-if Signers[string.lower(aliceAddress)] then
-  print(TestUtils.formatResult(true) .. " Alice duplicate signature processing")
-else
-  local aliceDuplicateSuccess, aliceDuplicateError = dfsm:processInput(aliceInput, false)
-  print(TestUtils.formatResult(not aliceDuplicateSuccess) .. " Alice duplicate signature processing")
-  assert(aliceDuplicateSuccess == false)
-end
-
-local deactivateInput = json.decode(inputDeactivate)
-local deactivateSuccess, deactivateError = dfsm:processInput(deactivateInput, false)
-print(TestUtils.formatResult(deactivateSuccess) .. " Deactivate manifesto processing")
-assert(deactivateSuccess == true)
-
-local inactiveState = dfsm:getCurrentState()
-local isInactive = inactiveState.id == "INACTIVE"
-print(TestUtils.formatResult(isInactive) .. " State is INACTIVE after deactivation")
-assert(isInactive == true)
-
+-- Step 5: Test signing when inactive
 local inactiveSignInput = {
   credentialSubject = {
     inputId = "signManifesto",
@@ -101,61 +99,72 @@ local inactiveSignInput = {
     }
   }
 }
-local inactiveSignSuccess, inactiveSignError = dfsm:processInput(inactiveSignInput, false)
-print(TestUtils.formatResult(not inactiveSignSuccess) .. " Sign when inactive processing")
-assert(inactiveSignSuccess == false)
+response = Handlers.evaluate({
+    Tags = { Action = 'ProcessInput' },
+    Data = json.encode({
+        inputValue = inactiveSignInput
+    }),
+    reply = function (response)
+      local success = response.Data.success
+      print(TestUtils.formatResult(not success) .. " Sign when inactive processing")
+      assert(success == false)
+    end
+    },
+    { envKey = "envValue" }
+)
 
-local activateInput = json.decode(inputActivate)
-local activateSuccess, activateError = dfsm:processInput(activateInput, false)
-print(TestUtils.formatResult(activateSuccess) .. " Reactivate manifesto processing")
-assert(activateSuccess == true)
+-- Step 6: Reactivate manifesto
+response = Handlers.evaluate({
+    Tags = { Action = 'ProcessInput' },
+    Data = json.encode({
+        inputValue = json.decode(inputActivate)
+    }),
+    reply = function (response)
+      local success = response.Data.success
+      print(TestUtils.formatResult(success) .. " Reactivate manifesto processing")
+      assert(success == true)
+    end
+    },
+    { envKey = "envValue" }
+)
 
-local activeState = dfsm:getCurrentState()
-local isActiveAgain = activeState.id == "ACTIVE"
-print(TestUtils.formatResult(isActiveAgain) .. " State is ACTIVE after reactivation")
-assert(isActiveAgain == true)
-
-local signersList = {}
-for address, signerData in pairs(Signers) do
-  table.insert(signersList, {
-    address = signerData.address,
-    name = signerData.name,
-    timestamp = signerData.timestamp,
-    signatureHash = signerData.signatureHash
-  })
-end
-table.sort(signersList, function(a, b) return a.timestamp < b.timestamp end)
-
-local aliceInList = false
-local bobInList = false
-for _, signer in ipairs(signersList) do
-  if string.lower(signer.address) == string.lower(aliceAddress) then
-    aliceInList = true
-  elseif string.lower(signer.address) == string.lower(bobAddress) then
-    bobInList = true
-  end
-end
-
-print(TestUtils.formatResult(aliceInList and bobInList) .. " Get signers functionality")
-assert(aliceInList and bobInList)
-
-local aliceInfo = Signers[string.lower(aliceAddress)]
-print(TestUtils.formatResult(aliceInfo ~= nil) .. " Get signer info for Alice")
-assert(aliceInfo ~= nil)
-
-local nonExistentInfo = Signers[string.lower("0xNonExistentAddress")]
-print(TestUtils.formatResult(nonExistentInfo == nil) .. " Get signer info for non-existent signer")
-assert(nonExistentInfo == nil)
-
-local stats = {
-  totalSigners = SignerCount,
-  isActive = dfsm:getCurrentState().id == "ACTIVE",
-  canAcceptSignatures = dfsm:getCurrentState().id == "ACTIVE"
-}
-print(TestUtils.formatResult(stats.totalSigners == 2 and stats.isActive and stats.canAcceptSignatures) .. " Get signer stats")
-assert(stats.totalSigners == 2 and stats.isActive and stats.canAcceptSignatures)
-
-print(TestUtils.formatResult(true) .. " State query includes manifesto-specific data")
+-- Final state check with manifesto-specific data
+response = Handlers.evaluate({
+    Tags = { Action = 'GetState' },
+    Data = json.encode({}),
+    reply = function (response)
+      local state = response.Data.State
+      local isComplete = response.Data.IsComplete
+      local signerCount = response.Data.SignerCount
+      local signers = response.Data.Signers
+      
+      -- Check basic state
+      assert(isComplete == false, "Manifesto should not be complete - it can continue accepting signatures")
+      assert(state.id == "ACTIVE")
+      
+      -- Check manifesto-specific data
+      assert(signerCount == 2, "Expected 2 signers, got " .. tostring(signerCount))
+      assert(signers ~= nil, "Signers data should be present")
+      
+      -- Verify Alice and Bob are in signers
+      local aliceFound = false
+      local bobFound = false
+      for address, signerData in pairs(signers) do
+        if string.lower(signerData.address) == "0x67fd5a5ec681b1208308813a2b3a0dd431be7278" then
+          aliceFound = true
+        elseif string.lower(signerData.address) == "0xbe32388c134a952cdbcc5673e93d46ffd8b85065" then
+          bobFound = true
+        end
+      end
+      
+      assert(aliceFound, "Alice should be in signers")
+      assert(bobFound, "Bob should be in signers")
+      
+      print(TestUtils.formatResult(true) .. " Final state check with manifesto data")
+    end
+    },
+    { envKey = "envValue" }
+)
 
 print("\n---------------------------------------------")
 print("✅ Manifesto actor test completed successfully!")

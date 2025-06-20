@@ -240,8 +240,23 @@ local function initializeWithExtensions(msg)
   end
   
   -- Ensure document is a string for DFSM.new
-  local documentString = type(document) == "string" and document or json.encode(document)
-  local dfsm = DFSM.new(documentString, false, initialValues)
+  local isWrappedVC = false
+  if type(Data) == "string" then
+    local parsed = json.decode(Data)
+    isWrappedVC = parsed.credentialSubject and parsed.credentialSubject.agreement ~= nil
+  elseif type(Data) == "table" then
+    isWrappedVC = Data.credentialSubject and Data.credentialSubject.agreement ~= nil
+  end
+
+  local dfsm
+  if isWrappedVC then
+    -- Pass the original wrapped VC string to DFSM.new
+    local wrappedVCString = type(msg.Data) == "string" and msg.Data or json.encode(msg.Data)
+    dfsm = DFSM.new(wrappedVCString, true, initialValues)
+  else
+    local documentString = type(document) == "string" and document or json.encode(document)
+    dfsm = DFSM.new(documentString, false, initialValues)
+  end
 
   if not dfsm then
     print("[apoc-v2] DFSM.new returned nil!")
@@ -250,7 +265,8 @@ local function initializeWithExtensions(msg)
   end
 
   Document = type(document) == "string" and json.decode(document) or document
-  DocumentHash = crypto.digest.keccak256(type(document) == "string" and document or json.encode(document)).asHex()
+  -- Calculate document hash from the original wrapped VC document, not the extracted agreement
+  DocumentHash = crypto.digest.keccak256(type(msg.Data) == "string" and msg.Data or json.encode(msg.Data)).asHex()
   print("[apoc-v2] Document hash set to:", DocumentHash)
   StateMachine = dfsm
   
