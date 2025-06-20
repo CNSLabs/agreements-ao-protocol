@@ -172,40 +172,25 @@ local function initializeWithExtensions(msg)
     Data = msg.Data
   end
   
-  -- Handle both old format (document as string) and new format (structured message)
-  local document, initialValues
-  if Data.document then
-    document = Data.document -- already a string
-    initialValues = Data.initialValues or {}
-  else
-    document = Data
-    initialValues = {}
-    
-    -- Extract initial values from wrapped VC params if available
-    if type(document) == "table" and document.credentialSubject and document.credentialSubject.params then
-      for key, value in pairs(document.credentialSubject.params) do
-        initialValues[key] = value
-      end
+  -- Always expect wrapped VC format
+  local document = msg.Data -- Keep original wrapped VC for hash calculation
+  local initialValues = {}
+  
+  -- Extract initial values from wrapped VC params
+  if Data.credentialSubject and Data.credentialSubject.params then
+    for key, value in pairs(Data.credentialSubject.params) do
+      initialValues[key] = value
     end
   end
 
-  -- If document is a string, check if it's a wrapped VC and extract the agreement
-  if type(document) == "string" then
-    local parsed = json.decode(document)
-    if parsed.credentialSubject and parsed.credentialSubject.agreement then
-      -- Wrapped VC: extract and decode agreement
-      local agreementBase64 = parsed.credentialSubject.agreement
-      local agreementJson = base64.decode(agreementBase64)
-      document = agreementJson
-    end
-  elseif type(document) == "table" then
-    -- Check if the document itself is a wrapped VC
-    if document.credentialSubject and document.credentialSubject.agreement then
-      -- Wrapped VC: extract and decode agreement
-      local agreementBase64 = document.credentialSubject.agreement
-      local agreementJson = base64.decode(agreementBase64)
-      document = agreementJson
-    end
+  -- Extract agreement JSON from wrapped VC for DFSM processing
+  local agreementJson
+  if Data.credentialSubject and Data.credentialSubject.agreement then
+    local agreementBase64 = Data.credentialSubject.agreement
+    agreementJson = base64.decode(agreementBase64)
+  else
+    reply_error(msg, 'Invalid wrapped VC: missing credentialSubject.agreement')
+    return false
   end
 
   if Document then
@@ -215,7 +200,7 @@ local function initializeWithExtensions(msg)
   end
   
   -- Execute pre-init extensions
-  local preContext = buildContext(msg, nil, { document = document })
+  local preContext = buildContext(msg, nil, { document = agreementJson })
   local preResults = executeExtensions(ExtensionPoints.PRE_INIT, preContext)
   
   -- Check for pre-init errors
@@ -229,7 +214,7 @@ local function initializeWithExtensions(msg)
   
   -- Extract initial variable values for DFSM (fallback to document.variables if not provided)
   if not initialValues or not next(initialValues) then
-    local docTable = type(document) == "string" and json.decode(document) or document
+    local docTable = json.decode(agreementJson)
     if docTable.variables then
       for varName, varDef in pairs(docTable.variables) do
         if varDef.value ~= nil then
@@ -239,24 +224,8 @@ local function initializeWithExtensions(msg)
     end
   end
   
-  -- Ensure document is a string for DFSM.new
-  local isWrappedVC = false
-  if type(Data) == "string" then
-    local parsed = json.decode(Data)
-    isWrappedVC = parsed.credentialSubject and parsed.credentialSubject.agreement ~= nil
-  elseif type(Data) == "table" then
-    isWrappedVC = Data.credentialSubject and Data.credentialSubject.agreement ~= nil
-  end
-
-  local dfsm
-  if isWrappedVC then
-    -- Pass the original wrapped VC string to DFSM.new
-    local wrappedVCString = type(msg.Data) == "string" and msg.Data or json.encode(msg.Data)
-    dfsm = DFSM.new(wrappedVCString, true, initialValues)
-  else
-    local documentString = type(document) == "string" and document or json.encode(document)
-    dfsm = DFSM.new(documentString, false, initialValues)
-  end
+  -- Initialize DFSM with wrapped VC (expectVCWrapper = true)
+  local dfsm = DFSM.new(document, true, initialValues)
 
   if not dfsm then
     print("[apoc-v2] DFSM.new returned nil!")
@@ -264,9 +233,9 @@ local function initializeWithExtensions(msg)
     return false
   end
 
-  Document = type(document) == "string" and json.decode(document) or document
-  -- Calculate document hash from the original wrapped VC document, not the extracted agreement
-  DocumentHash = crypto.digest.keccak256(type(msg.Data) == "string" and msg.Data or json.encode(msg.Data)).asHex()
+  Document = json.decode(agreementJson)
+  -- Calculate document hash from the original wrapped VC document
+  DocumentHash = crypto.digest.keccak256(document).asHex()
   print("[apoc-v2] Document hash set to:", DocumentHash)
   StateMachine = dfsm
   
