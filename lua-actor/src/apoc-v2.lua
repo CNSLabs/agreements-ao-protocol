@@ -1,12 +1,11 @@
 local Handlers = require("handlers")
+local ActorExtensions = require("actor-extensions")
 
 local json = require("json")
-local Array = require(".crypto.util.array")
 local crypto = require(".crypto.init")
-local utils = require(".utils")
+local base64 = require(".base64")
 
 local DFSM = require("dfsm")
-
 
 -- BEGIN: actor's internal state
 StateMachine = StateMachine or nil
@@ -31,73 +30,189 @@ local function reply_error(msg, error)
     }
   })
   print("Error during execution: " .. error)
-  -- throwing errors seems to somehow get in the way of msg.reply going through, even though it happens strictly after...
-  -- error(error_msg)
 end
 
+-- Enhanced input processor with extension support
+local function processInputWithExtensions(msg)
+  if not StateMachine then
+    reply_error(msg, 'State machine not initialized')
+    return false
+  end
+  
+  local Data
+  if type(msg.Data) == "string" then
+    Data = json.decode(msg.Data)
+  else
+    Data = msg.Data
+  end
+  local inputValue = Data.inputValue
+  
+  -- Build context for extensions
+  local context = ActorExtensions.buildContext(msg, StateMachine, {
+    inputValue = inputValue,
+    inputData = Data
+  })
+  
+  -- Execute pre-processing extensions
+  local preResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.PRE_INPUT_PROCESSING, context)
+  
+  -- Check for errors in pre-processing
+  if ActorExtensions.checkExtensionErrors(preResults, function(error) 
+    msg.reply({ Data = { success = false, error = error } })
+  end) then
+    return false
+  end
+  
+  -- Execute input validation extensions
+  local validationResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.INPUT_VALIDATION, context)
+  
+  -- Check for validation errors
+  if ActorExtensions.checkExtensionErrors(validationResults, function(error) 
+    msg.reply({ Data = { success = false, error = error } })
+  end) then
+    return false
+  end
+  
+  -- Process through base DFSM
+  local isValid, errorMsg = StateMachine:processInput(inputValue, true)
+  
+  if not isValid then
+    msg.reply({ Data = { success = false, error = errorMsg or 'Failed to process input' } })
+    return false
+  end
+  
+  -- Execute post-processing extensions
+  local postResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.POST_INPUT_PROCESSING, context)
+  
+  -- Check for errors in post-processing
+  if ActorExtensions.checkExtensionErrors(postResults, function(error) 
+    msg.reply({ Data = { success = false, error = error } })
+  end) then
+    return false
+  end
+  
+  msg.reply({ Data = { success = true } })
+  return true
+end
+
+-- Enhanced initialization with extension support
+local function initializeWithExtensions(msg)
+  local Data
+  if type(msg.Data) == "string" then
+    Data = json.decode(msg.Data)
+  else
+    Data = msg.Data
+  end
+  
+  -- Always expect wrapped VC format
+  local document = msg.Data -- Keep original wrapped VC for hash calculation
+  local initialValues = {}
+  
+  -- Extract initial values from wrapped VC params
+  if Data.credentialSubject and Data.credentialSubject.params then
+    for key, value in pairs(Data.credentialSubject.params) do
+      initialValues[key] = value
+    end
+  end
+
+  -- Extract agreement JSON from wrapped VC for DFSM processing
+  local agreementJson
+  if Data.credentialSubject and Data.credentialSubject.agreement then
+    local agreementBase64 = Data.credentialSubject.agreement
+    agreementJson = base64.decode(agreementBase64)
+  else
+    reply_error(msg, 'Invalid wrapped VC: missing credentialSubject.agreement')
+    return false
+  end
+
+  if Document then
+    reply_error(msg, 'Document is already initialized and cannot be overwritten')
+    return false
+  end
+  
+  -- Execute pre-init extensions
+  local preContext = ActorExtensions.buildContext(msg, nil, { document = agreementJson })
+  local preResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.PRE_INIT, preContext)
+  
+  -- Check for pre-init errors
+  if ActorExtensions.checkExtensionErrors(preResults, function(error) reply_error(msg, error) end) then
+    return false
+  end
+  
+  -- Extract initial variable values for DFSM (fallback to document.variables if not provided)
+  if not initialValues or not next(initialValues) then
+    local docTable = json.decode(agreementJson)
+    if docTable.variables then
+      for varName, varDef in pairs(docTable.variables) do
+        if varDef.value ~= nil then
+          initialValues[varName] = varDef.value
+        end
+      end
+    end
+  end
+  
+  -- Initialize DFSM with wrapped VC (expectVCWrapper = true)
+  local dfsm = DFSM.new(document, true, initialValues)
+
+  if not dfsm then
+    reply_error(msg, 'Invalid agreement document')
+    return false
+  end
+
+  Document = msg.Data
+  -- Calculate document hash from the original wrapped VC document
+  DocumentHash = crypto.digest.keccak256(Document).asHex()
+  StateMachine = dfsm
+  
+  -- Execute post-init extensions
+  local postContext = ActorExtensions.buildContext(msg, StateMachine, { document = Document })
+  local postResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.POST_INIT, postContext)
+  
+  -- Check for post-init errors
+  if ActorExtensions.checkExtensionErrors(postResults, function(error) reply_error(msg, error) end) then
+    return false
+  end
+
+  msg.reply({ Data = { success = true } })
+  return true
+end
+
+-- Enhanced state query with extension support
+local function getStateWithExtensions(msg)
+  if not StateMachine then
+    reply_error(msg, 'State machine not initialized')
+    return
+  end
+
+  local baseState = {
+    State = StateMachine:getCurrentState(),
+    IsComplete = StateMachine:isComplete(),
+    Variables = StateMachine:getVariables(),
+    Inputs = StateMachine:getInputs(),
+    ReceivedInputs = StateMachine:getReceivedInputs(),
+  }
+  
+  -- Execute state query extensions
+  local context = ActorExtensions.buildContext(msg, StateMachine, { baseState = baseState })
+  local queryResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.STATE_QUERY, context)
+  
+  -- Merge extension results into base state
+  baseState = ActorExtensions.mergeExtensionResults(baseState, queryResults)
+  
+  msg.reply({ Data = baseState })
+end
+
+-- Base handlers
 Handlers.add(
   "Init",
   Handlers.utils.hasMatchingTag("Action", "Init"),
-  function (msg)
-    -- expecting msg.Data to contain a valid agreement VC
-    local document = msg.Data
-
-    if Document then
-      reply_error(msg, 'Document is already initialized and cannot be overwritten')
-      return
-    end
-    
-    local dfsm = DFSM.new(document, true)
-
-    if not dfsm then
-      reply_error(msg, 'Invalid agreement document')
-      return
-    end
-
-    Document = document
-    DocumentHash = crypto.digest.keccak256(document).asHex()
-    StateMachine = dfsm
-    -- DocumentOwner = owner_eth_address
-
-    -- -- TODO: validate the signatories list is a valid list of eth addresses?
-    -- local signatories = vc_json.credentialSubject.signatories or {}
-    -- if #signatories == 0 then
-    -- reply_error(msg, 'Must have at least one signatory specified')
-    -- return
-    -- end
-
-    -- -- forcing lowercase on the received eth addresses to avoid comparison confusion down the road
-    -- local sigs_lowercase = utils.map(function(x) return string.lower(x) end)(signatories)
-    -- Signatories = sigs_lowercase
-
-    -- -- print("Agreement VC verification result: " .. (is_valid and "VALID" or "INVALID"))
-
-    msg.reply({ Data = { success = true } })
-  end
+  initializeWithExtensions
 )
 
 Handlers.add(
   "ProcessInput",
   Handlers.utils.hasMatchingTag("Action", "ProcessInput"),
-  function (msg)
-    local Data = json.decode(msg.Data)
-
-    local inputValue = Data.inputValue
-    
-    if not StateMachine then
-      reply_error(msg, 'State machine not initialized')
-      return
-    end
-    
-    local isValid, errorMsg = StateMachine:processInput(inputValue, true)
-    
-    if not isValid then
-      reply_error(msg, errorMsg or 'Failed to process input')
-      return
-    end
-    
-    msg.reply({ Data = { success = true } })
-  end
+  processInputWithExtensions
 )
 
 Handlers.add(
@@ -107,31 +222,25 @@ Handlers.add(
     msg.reply({ Data = {
         Document = Document,
         DocumentHash = DocumentHash,
-        -- DocumentOwner = DocumentOwner,
     }})
   end
 )
 
--- Debug util to retrieve the important local state fields
 Handlers.add(
   "GetState",
   Handlers.utils.hasMatchingTag("Action", "GetState"),
-  function (msg)
-    if not StateMachine then
-      reply_error(msg, 'State machine not initialized')
-      return
-    end
-
-    local state = {
-      State = StateMachine:getCurrentState(),
-      IsComplete = StateMachine:isComplete(),
-      Variables = StateMachine:getVariables(),
-      Inputs = StateMachine:getInputs(),
-      ReceivedInputs = StateMachine:getReceivedInputs(),
-    }
-    -- print(state)
-    msg.reply({ Data = state })
-  end
+  getStateWithExtensions
 )
 
-return { Handlers = Handlers, resetState = resetState }
+-- Export the extensible base actor
+return { 
+  Handlers = Handlers, 
+  resetState = resetState,
+  -- Extension framework (delegated to ActorExtensions library)
+  ExtensionPoints = ActorExtensions.ExtensionPoints,
+  registerExtension = ActorExtensions.registerExtension,
+  executeExtensions = ActorExtensions.executeExtensions,
+  buildContext = ActorExtensions.buildContext,
+  -- Utility functions for extensions
+  reply_error = reply_error
+}
