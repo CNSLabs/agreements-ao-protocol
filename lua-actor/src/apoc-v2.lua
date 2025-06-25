@@ -159,9 +159,9 @@ local function initializeWithExtensions(msg)
     return false
   end
 
-  Document = json.decode(agreementJson)
+  Document = msg.Data
   -- Calculate document hash from the original wrapped VC document
-  DocumentHash = crypto.digest.keccak256(document).asHex()
+  DocumentHash = crypto.digest.keccak256(Document).asHex()
   StateMachine = dfsm
   
   -- Execute post-init extensions

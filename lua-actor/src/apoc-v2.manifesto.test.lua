@@ -29,6 +29,21 @@ local response = Handlers.evaluate({
     { envKey = "envValue" }
 )
 
+-- Test GetDocument after initialization
+response = Handlers.evaluate({
+    Tags = { Action = 'GetDocument' },
+    Data = json.encode({}),
+    reply = function (response)
+      local document = response.Data.Document
+      local documentHash = response.Data.DocumentHash
+      
+      assert(document == agreementDoc)
+      assert(documentHash == "3f00124f35e74f2eeb60d9f0ed6e695f5589f3351ce822dbb3e40720efc2bd23")
+    end
+    },
+    { envKey = "envValue" }
+)
+
 -- Step 1: Alice signature
 response = Handlers.evaluate({
     Tags = { Action = 'ProcessInput' },
