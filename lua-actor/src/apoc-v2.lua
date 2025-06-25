@@ -57,7 +57,9 @@ local function processInputWithExtensions(msg)
   local preResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.PRE_INPUT_PROCESSING, context)
   
   -- Check for errors in pre-processing
-  if ActorExtensions.checkExtensionErrors(preResults, function(error) reply_error(msg, error) end) then
+  if ActorExtensions.checkExtensionErrors(preResults, function(error) 
+    msg.reply({ Data = { success = false, error = error } })
+  end) then
     return false
   end
   
@@ -65,7 +67,9 @@ local function processInputWithExtensions(msg)
   local validationResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.INPUT_VALIDATION, context)
   
   -- Check for validation errors
-  if ActorExtensions.checkExtensionErrors(validationResults, function(error) reply_error(msg, error) end) then
+  if ActorExtensions.checkExtensionErrors(validationResults, function(error) 
+    msg.reply({ Data = { success = false, error = error } })
+  end) then
     return false
   end
   
@@ -73,7 +77,7 @@ local function processInputWithExtensions(msg)
   local isValid, errorMsg = StateMachine:processInput(inputValue, true)
   
   if not isValid then
-    reply_error(msg, errorMsg or 'Failed to process input')
+    msg.reply({ Data = { success = false, error = errorMsg or 'Failed to process input' } })
     return false
   end
   
@@ -81,7 +85,9 @@ local function processInputWithExtensions(msg)
   local postResults = ActorExtensions.executeExtensions(ActorExtensions.ExtensionPoints.POST_INPUT_PROCESSING, context)
   
   -- Check for errors in post-processing
-  if ActorExtensions.checkExtensionErrors(postResults, function(error) reply_error(msg, error) end) then
+  if ActorExtensions.checkExtensionErrors(postResults, function(error) 
+    msg.reply({ Data = { success = false, error = error } })
+  end) then
     return false
   end
   
