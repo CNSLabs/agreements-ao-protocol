@@ -2,6 +2,21 @@ require("setup")
 
 local VcValidator = require("vc-validator")
 
+-- Test 1: get_authority did:pkh format
+local did_pkh = "did:pkh:eip155:1:0xB49e45Affd4963374e72f850B6Cae84939e58F78"
+local result1 = VcValidator.get_authority(did_pkh)
+assert(result1 == "0xb49e45affd4963374e72f850b6cae84939e58f78", "Failed to get authority for did:pkh format")
+
+-- Test 2: get_authority for did:ethr format
+local did_ethr = "did:ethr:0xB49e45Affd4963374e72f850B6Cae84939e58F78"
+local result2 = VcValidator.get_authority(did_ethr)
+assert(result2 == "0xb49e45affd4963374e72f850b6cae84939e58f78", "Failed to get authority for did:ethr format")
+
+-- Test 3: get_authority for invalid format
+local invalid_did = "did:invalid:0xB49e45Affd4963374e72f850B6Cae84939e58F78"
+local success, error_msg = pcall(VcValidator.get_authority, invalid_did)
+assert(not success, "Expected error for invalid format")
+
 -- validating a VC that contains an array of primitive values
 local success, vcJson, ownerAddress = VcValidator.validate([[
 {

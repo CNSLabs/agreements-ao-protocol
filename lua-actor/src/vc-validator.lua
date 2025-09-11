@@ -54,8 +54,11 @@ local function get_authority(issuer)
     -- eg. 'did:pkh:eip155:1:0x1e8564A52fc67A68fEe78Fc6422F19c07cFae198'
     if (parts[1] == 'did' and parts[2] == 'pkh' and parts[3] == 'eip155' and parts[4] == '1') then
       eth_address = parts[5]
+    -- eg. 'did:ethr:0x1e8564A52fc67A68fEe78Fc6422F19c07cFae198'
+    elseif (parts[1] == 'did' and parts[2] == 'ethr') then
+      eth_address = parts[3]
     else
-      error('Only supporting did:pkh issuers')
+      error('Only supporting did:pkh and did:ethr issuers')
     end
     return string.lower(eth_address or '')
   end
@@ -106,4 +109,5 @@ end
 
 return {
   validate = vc_validate,
+  get_authority = get_authority,
 }
