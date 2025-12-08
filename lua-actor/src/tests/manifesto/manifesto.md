@@ -1,6 +1,6 @@
 # Manifesto State Machine
 
-This state machine implements a simple manifesto agreement that supports controller-based activation and deactivation. The manifesto allows a designated controller to enable or disable signature collection dynamically.
+This state machine implements a simple manifesto agreement that supports controller-based activation and deactivation. The manifesto starts active and allows a designated controller to enable or disable signature collection dynamically.
 
 ## State Machine Overview
 
@@ -8,9 +8,8 @@ This state machine implements a simple manifesto agreement that supports control
 stateDiagram-v2
     direction LR
   
-    [*] --> INITIALIZED: initialize
+    [*] --> ACTIVE: initialize
   
-    INITIALIZED --> ACTIVE: activate
     ACTIVE --> INACTIVE: deactivate  
     INACTIVE --> ACTIVE: activate
     ACTIVE --> ACTIVE: signManifesto
@@ -26,7 +25,7 @@ stateDiagram-v2
 1. **Controller-Based Access**: Only the designated controller can activate or deactivate the manifesto
 2. **Dynamic State Management**: The manifesto can be toggled between active and inactive states multiple times
 3. **Open Signature Collection**: When active, anyone can sign the manifesto without issuer validation
-4. **Controlled Activation**: Signatures can only be collected when the manifesto is in ACTIVE state
+4. **Ready to Use**: Starts in ACTIVE state, immediately ready for signature collection
 5. **Simple Workflow**: Unlike complex agreement flows, this focuses on basic on/off functionality with signature collection
 
 ## Test Scenarios
@@ -38,8 +37,7 @@ This demonstrates the primary use case: collecting signatures from multiple part
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> INITIALIZED: "✅ Initialize"
-    INITIALIZED --> ACTIVE: "✅ Controller Activates"
+    [*] --> ACTIVE: "✅ Initialize (starts ACTIVE)"
     ACTIVE --> ACTIVE: "✅ Alice Signs (signManifesto)"
     ACTIVE --> ACTIVE: "✅ Bob Signs (signManifesto)"
     ACTIVE --> ACTIVE: "✅ More Signatures (signManifesto)..."
@@ -50,35 +48,33 @@ stateDiagram-v2
 Happy Path Steps:
 
 1. **Initialization**:
-   - Manifesto is created and starts in `INITIALIZED` state
-2. **Controller Activation**:
-   - Controller activates the manifesto (`INITIALIZED → ACTIVE`)
-   - Manifesto is now ready to accept signatures
-3. **Alice Signs**:
+   - Manifesto is created and starts in `ACTIVE` state
+   - Immediately ready to accept signatures
+2. **Alice Signs**:
    - Alice submits her signature (`ACTIVE → ACTIVE`)
    - State remains `ACTIVE` to continue collecting signatures
-4. **Bob Signs**:
+3. **Bob Signs**:
    - Bob submits his signature (`ACTIVE → ACTIVE`)
    - State remains `ACTIVE` for additional signatures
-5. **Continue Collection**:
+4. **Continue Collection**:
    - More parties can sign while manifesto remains `ACTIVE`
    - Each signature keeps the state as `ACTIVE`
-6. **Controller Deactivation** (Optional):
+5. **Controller Deactivation** (Optional):
    - Controller can deactivate when signature collection is complete (`ACTIVE → INACTIVE`)
    - No more signatures can be collected in `INACTIVE` state
 
-### 2. Signature Collection Flow
+### 2. Activation/Deactivation Control Flow
 
-This demonstrates the main use case: collecting signatures from multiple parties when the manifesto is active.
+This demonstrates controller-based state management for enabling and disabling signature collection.
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> INITIALIZED
-    INITIALIZED --> ACTIVE: "✅ Controller Activates"
+    [*] --> ACTIVE: "✅ Initialize (starts ACTIVE)"
     ACTIVE --> ACTIVE: "✅ Alice Signs"
     ACTIVE --> ACTIVE: "✅ Bob Signs" 
     ACTIVE --> INACTIVE: "✅ Controller Deactivates"
+    INACTIVE --> ACTIVE: "✅ Controller Reactivates"
     INACTIVE --> INACTIVE: "❌ Cannot Sign When Inactive"
 ```
 
@@ -101,8 +97,8 @@ These tests verify that only the designated controller can perform state transit
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> INITIALIZED
-    INITIALIZED --> ACTIVE: ✅ Valid Controller
+    [*] --> ACTIVE: ✅ Initialize (starts ACTIVE)
+    ACTIVE --> INACTIVE: ✅ Valid Controller Deactivates
     ACTIVE --> ACTIVE: ❌ Invalid Controller (Rejected)
     ACTIVE --> ACTIVE: ❌ Unknown Input (Rejected)
 ```
@@ -126,8 +122,7 @@ This shows all test scenarios including error cases and edge conditions:
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> INITIALIZED: "✅ Initialize"
-    INITIALIZED --> ACTIVE: "✅ Activate manifesto for first time"
+    [*] --> ACTIVE: "✅ Initialize (starts ACTIVE)"
     ACTIVE --> INACTIVE: "✅ Deactivate manifesto"
     INACTIVE --> INACTIVE: "❌ Try deactivate when already inactive"
     INACTIVE --> ACTIVE: "✅ Reactivate manifesto"
@@ -139,7 +134,7 @@ stateDiagram-v2
 
 Test Scenarios:
 
-1. **Activate manifesto for first time** (`INITIALIZED → ACTIVE`)
+1. **Verify initial state is ACTIVE** (starts ready for signatures)
 2. **Deactivate manifesto** (`ACTIVE → INACTIVE`)
 3. **Try to deactivate when already inactive** (should fail with "No valid transition")
 4. **Reactivate manifesto** (`INACTIVE → ACTIVE`)
@@ -154,14 +149,13 @@ This documents the allowed and forbidden transitions in the state machine.
 
 **Allowed Transitions:**
 
-- `INITIALIZED → ACTIVE` (via `activate` input)
+- `Initialization → ACTIVE` (automatic on agreement creation)
 - `ACTIVE → INACTIVE` (via `deactivate` input)
 - `INACTIVE → ACTIVE` (via `activate` input)
 - `ACTIVE → ACTIVE` (via `signManifesto` input)
 
 **Forbidden Transitions:**
 
-- `INITIALIZED → INACTIVE` (must activate first)
 - `INACTIVE → INACTIVE` (via `deactivate` - fails with "No valid transition")
 - `INACTIVE → ACTIVE` (via `signManifesto` - signatures only accepted when active)
 
@@ -356,9 +350,9 @@ All inputs include full cryptographic proofs and are generated using Veramo:
 
 ### Test Coverage
 
-**Unwrapped Tests (8 tests)**:
+**Unwrapped Tests (7 tests)**:
 
-1. ✅ Activate manifesto for first time (`INITIALIZED → ACTIVE`)
+1. ✅ Verify initial state is ACTIVE (starts ready for signatures)
 2. ✅ Deactivate manifesto (`ACTIVE → INACTIVE`)
 3. ✅ Try to deactivate when already inactive (failure case)
 4. ✅ Reactivate manifesto (`INACTIVE → ACTIVE`)
@@ -367,9 +361,9 @@ All inputs include full cryptographic proofs and are generated using Veramo:
 7. ✅ Invalid input ID (failure case)
 8. ✅ Invalid issuer - not controller (failure case)
 
-**Wrapped Tests (8 tests)**:
+**Wrapped Tests (7 tests)**:
 
-1. ✅ Activate manifesto for first time (`INITIALIZED → ACTIVE`)
+1. ✅ Verify initial state is ACTIVE (starts ready for signatures)
 2. ✅ Deactivate manifesto (`ACTIVE → INACTIVE`)
 3. ✅ Try to deactivate when already inactive (failure case)
 4. ✅ Reactivate manifesto (`INACTIVE → ACTIVE`)
@@ -378,15 +372,15 @@ All inputs include full cryptographic proofs and are generated using Veramo:
 7. ✅ Invalid input ID (failure case)
 8. ⏭️ Invalid issuer test (skipped - handled by crypto verification)
 
-**Total: 16 test scenarios** covering both validation modes
+**Total: 14 test scenarios** covering both validation modes
 *Plus initial state verification for each suite*
 
-**Test Assertions: 36 total**
+**Test Assertions: 30 total**
 
 - Each successful test includes 2 assertions (success + state transition)
 - Each failed test includes 3 assertions (failure + error message + state preservation)
-- Unwrapped: 19 assertions across 8 test scenarios
-- Wrapped: 17 assertions across 8 test scenarios
+- Unwrapped: 16 assertions across 7 test scenarios
+- Wrapped: 14 assertions across 7 test scenarios
 
 **Important Differences**:
 

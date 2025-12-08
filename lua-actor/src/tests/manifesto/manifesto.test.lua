@@ -82,27 +82,14 @@ local function runTestSuite(params)
         end
     end
 
-    -- Test 1: Verify initial state is INITIALIZED
+    -- Test 1: Verify initial state is ACTIVE
     local currentStateId = dfsm.currentState and dfsm.currentState.id or "nil"
-    if currentStateId ~= "INITIALIZED" then
-        error("Expected initial state to be INITIALIZED, but got: " .. tostring(currentStateId))
+    if currentStateId ~= "ACTIVE" then
+        error("Expected initial state to be ACTIVE, but got: " .. tostring(currentStateId))
     end
-    print("✅ Initial state is INITIALIZED as expected")
+    print("✅ Initial state is ACTIVE as expected")
 
-    -- Test 2: Activate manifesto (INITIALIZED -> ACTIVE)
-    TestUtils.runTest(
-        "Activate manifesto for first time", 
-        dfsm, 
-        formatTestInput(activateInput, "activate", "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4", { activation = "ACTIVATE" }),
-        true,  -- expect success
-        nil,
-        "ACTIVE",
-        DFSMUtils,
-        testCounter,
-        expectVc
-    )
-
-    -- Test 3: Deactivate manifesto (ACTIVE -> INACTIVE)
+    -- Test 2: Deactivate manifesto (ACTIVE -> INACTIVE)
     TestUtils.runTest(
         "Deactivate manifesto", 
         dfsm, 
@@ -115,7 +102,7 @@ local function runTestSuite(params)
         expectVc
     )
 
-    -- Test 4: Try to deactivate again - should fail as already inactive
+    -- Test 3: Try to deactivate again - should fail as already inactive
     TestUtils.runTest(
         "Try to deactivate when already inactive", 
         dfsm, 
@@ -128,7 +115,7 @@ local function runTestSuite(params)
         expectVc
     )
 
-    -- Test 5: Reactivate manifesto (INACTIVE -> ACTIVE)
+    -- Test 4: Reactivate manifesto (INACTIVE -> ACTIVE)
     TestUtils.runTest(
         "Reactivate manifesto", 
         dfsm, 
@@ -141,7 +128,7 @@ local function runTestSuite(params)
         expectVc
     )
 
-    -- Test 6: Alice signs the manifesto (ACTIVE -> ACTIVE)
+    -- Test 5: Alice signs the manifesto (ACTIVE -> ACTIVE)
     TestUtils.runTest(
         "Alice signs the manifesto", 
         dfsm, 
@@ -156,7 +143,7 @@ local function runTestSuite(params)
         expectVc
     )
 
-    -- Test 7: Bob signs the manifesto (ACTIVE -> ACTIVE)
+    -- Test 6: Bob signs the manifesto (ACTIVE -> ACTIVE)
     TestUtils.runTest(
         "Bob signs the manifesto", 
         dfsm, 
@@ -171,7 +158,7 @@ local function runTestSuite(params)
         expectVc
     )
 
-    -- Test 8: Invalid input ID – should fail with unknown input error
+    -- Test 7: Invalid input ID – should fail with unknown input error
     TestUtils.runTest(
         "Invalid input ID", 
         dfsm, 
@@ -190,7 +177,7 @@ local function runTestSuite(params)
         expectVc
     )
 
-    -- Test 9: Invalid issuer (not controller) - should fail (only for unwrapped tests)
+    -- Test 8: Invalid issuer (not controller) - should fail (only for unwrapped tests)
     if not expectVc then
         TestUtils.runTest(
             "Invalid issuer (not controller)", 

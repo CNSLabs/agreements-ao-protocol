@@ -41,10 +41,6 @@
   },
   "execution": {
     "states": {
-      "INITIALIZED": {
-        "name": "Manifesto Initialized",
-        "description": "The manifesto has been created and initialized with a controller. Ready to be activated."
-      },
       "ACTIVE": {
         "name": "Agreement is accepting signatures",
         "description": "The manifesto accepts signatures and can be deactivated by the controller."
@@ -57,7 +53,7 @@
     "initialize": {
       "name": "Initialize",
       "description": "Initialize the manifesto with the controller",
-      "initialState": "INITIALIZED",
+      "initialState": "ACTIVE",
       "data": {
         "controller": "${variables.controller}"
       }
@@ -95,16 +91,6 @@
       }
     },
     "transitions": [
-      {
-        "from": "INITIALIZED",
-        "to": "ACTIVE",
-        "conditions": [
-          {
-            "type": "isValid",
-            "input": "activate"
-          }
-        ]
-      },
       {
         "from": "ACTIVE",
         "to": "INACTIVE",
