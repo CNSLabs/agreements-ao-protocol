@@ -1,0 +1,9 @@
+{
+  "inputId": "profileActivation",
+  "type": "signedFields",
+  "values": {
+    "userSignature": "0x9f8e7d6c5b4a392817263548596a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e",
+    "profileCreatedAt": "2024-03-20T15:30:00Z",
+    "isActive": true
+  }
+} 

@@ -1,0 +1,9 @@
+{
+  "inputId": "profileUpdate",
+  "type": "signedFields",
+  "values": {
+    "nickname": "Web3Pioneer",
+    "bio": "Passionate about decentralized technologies, DeFi protocols, and building user-friendly dApps.",
+    "profilePicture": "https://ipfs.io/ipfs/QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx"
+  }
+} 

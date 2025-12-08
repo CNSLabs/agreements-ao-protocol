@@ -199,7 +199,7 @@ local function validateInputVC(input, value, dfsm, validateSignature, validateVa
     if normalizeHex(vcJson.credentialSubject.documentHash) ~= normalizeHex(documentHash) then
         return false, nil, "Input VC is targeting the wrong agreement"
     end
-    if validateValues then
+    if validateValues and input.data then
         local isValid, errorMsg = ValidationUtils.processAndValidateVariables(input.data, credentialSubject.values, dfsm)
         if not isValid then
             return false, nil, errorMsg

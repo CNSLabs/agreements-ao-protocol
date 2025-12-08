@@ -1,0 +1,126 @@
+{
+  "issuer": {
+    "id": "did:pkh:eip155:1:0xB49e45Affd4963374e72f850B6Cae84939e58F78"
+  },
+  "credentialSubject": {
+    "id": "did:example:profile-1",
+    "agreement": "eyJtZXRhZGF0YSI6eyJpZCI6ImRpZDpleGFtcGxlOnByb2ZpbGUtdjEiLCJ0ZW1wbGF0ZUlkIjoiZGlkOnRlbXBsYXRlOnByb2ZpbGUtdjEiLCJ2ZXJzaW9uIjoiMS4wLjAiLCJjcmVhdGVkQXQiOiIyMDI0LTAzLTIwVDEyOjAwOjAwWiIsIm5hbWUiOiJQcm9maWxlIEFncmVlbWVudCIsImF1dGhvciI6IkFncmVlbWVudHMgUHJvdG9jb2wiLCJkZXNjcmlwdGlvbiI6IlRlbXBsYXRlIGZvciB1c2VyIHByb2ZpbGUgbWFuYWdlbWVudCB3aXRoIGFjdGl2YXRpb24gYW5kIGZpZWxkIHVwZGF0ZXMifSwidmFyaWFibGVzIjp7InVzZXJFdGhBZGRyZXNzIjp7InR5cGUiOiJhZGRyZXNzIiwibmFtZSI6IlVzZXIgQWRkcmVzcyIsImRlc2NyaXB0aW9uIjoiRXRoZXJldW0gYWRkcmVzcyBvZiB0aGUgcHJvZmlsZSBvd25lciIsInZhbGlkYXRpb24iOnsicmVxdWlyZWQiOnRydWV9fSwidXNlclNpZ25hdHVyZSI6eyJ0eXBlIjoic2lnbmF0dXJlIiwibmFtZSI6IlVzZXIgU2lnbmF0dXJlIiwiZGVzY3JpcHRpb24iOiJEaWdpdGFsIHNpZ25hdHVyZSBvZiB0aGUgcHJvZmlsZSBvd25lciIsInZhbGlkYXRpb24iOnsicmVxdWlyZWQiOnRydWV9fSwicHJvZmlsZUNyZWF0ZWRBdCI6eyJ0eXBlIjoiZGF0ZVRpbWUiLCJuYW1lIjoiUHJvZmlsZSBDcmVhdGlvbiBEYXRlIiwiZGVzY3JpcHRpb24iOiJUaGUgZGF0ZSB3aGVuIHRoaXMgcHJvZmlsZSB3YXMgY3JlYXRlZCIsInZhbGlkYXRpb24iOnsicmVxdWlyZWQiOnRydWV9fSwibmlja25hbWUiOnsidHlwZSI6InN0cmluZyIsIm5hbWUiOiJQcm9maWxlIE5pY2tuYW1lIiwiZGVzY3JpcHRpb24iOiJEaXNwbGF5IG5hbWUgZm9yIHRoZSB1c2VyIHByb2ZpbGUiLCJ2YWxpZGF0aW9uIjp7InJlcXVpcmVkIjpmYWxzZSwibWF4TGVuZ3RoIjo1MH19LCJiaW8iOnsidHlwZSI6InN0cmluZyIsIm5hbWUiOiJQcm9maWxlIEJpbyIsImRlc2NyaXB0aW9uIjoiVXNlciBiaW9ncmFwaHkgb3IgZGVzY3JpcHRpb24iLCJ2YWxpZGF0aW9uIjp7InJlcXVpcmVkIjpmYWxzZSwibWF4TGVuZ3RoIjo1MDB9fSwicHJvZmlsZVBpY3R1cmUiOnsidHlwZSI6InN0cmluZyIsIm5hbWUiOiJQcm9maWxlIFBpY3R1cmUiLCJkZXNjcmlwdGlvbiI6IlVSTCBvciBoYXNoIG9mIHRoZSBwcm9maWxlIHBpY3R1cmUiLCJ2YWxpZGF0aW9uIjp7InJlcXVpcmVkIjpmYWxzZX19LCJpc0FjdGl2ZSI6eyJ0eXBlIjoiYm9vbGVhbiIsIm5hbWUiOiJQcm9maWxlIEFjdGl2ZSBTdGF0dXMiLCJkZXNjcmlwdGlvbiI6IldoZXRoZXIgdGhlIHByb2ZpbGUgaXMgY3VycmVudGx5IGFjdGl2ZSIsInZhbGlkYXRpb24iOnsicmVxdWlyZWQiOnRydWV9fSwiZGVhY3RpdmF0aW9uUmVhc29uIjp7InR5cGUiOiJzdHJpbmciLCJuYW1lIjoiRGVhY3RpdmF0aW9uIFJlYXNvbiIsImRlc2NyaXB0aW9uIjoiT3B0aW9uYWwgcmVhc29uIGZvciBkZWFjdGl2YXRpbmcgdGhlIHByb2ZpbGUiLCJ2YWxpZGF0aW9uIjp7InJlcXVpcmVkIjpmYWxzZSwibWF4TGVuZ3RoIjoyMDB9fX0sImNvbnRlbnQiOnsidHlwZSI6Im1kIiwiZGF0YSI6IiMgUFJPRklMRSBBR1JFRU1FTlRcblxuKipQUk9GSUxFIE9XTkVSOioqXG5cbjx1PiR7dmFyaWFibGVzLnVzZXJFdGhBZGRyZXNzfTwvdT4gKFwiVXNlciBBZGRyZXNzXCIpXG5cbioqUFJPRklMRSBDUkVBVElPTiBEQVRFOioqXG5cbjx1PiR7dmFyaWFibGVzLnByb2ZpbGVDcmVhdGVkQXR9PC91PiAoXCJDcmVhdGlvbiBEYXRlXCIpXG5cbiMjIDEuIElOVFJPRFVDVElPTlxuXG5UaGlzIFByb2ZpbGUgQWdyZWVtZW50ICh0aGUgXCJBZ3JlZW1lbnRcIikgZ292ZXJucyB0aGUgbWFuYWdlbWVudCBhbmQgdXNhZ2Ugb2YgYSB1c2VyIHByb2ZpbGUgd2l0aGluIHRoZSBwbGF0Zm9ybS5cblxuVGhlIHB1cnBvc2Ugb2YgdGhpcyBBZ3JlZW1lbnQgaXMgdG8gZXN0YWJsaXNoIHRoZSB0ZXJtcyBhbmQgY29uZGl0aW9ucyBmb3IgcHJvZmlsZSBhY3RpdmF0aW9uLCB1cGRhdGVzLCBhbmQgZGVhY3RpdmF0aW9uLlxuXG4jIyAyLiBQUk9GSUxFIElORk9STUFUSU9OXG5cbioqTmlja25hbWU6KiogPHU+JHt2YXJpYWJsZXMubmlja25hbWV9PC91PlxuXG4qKkJpbzoqKiA8dT4ke3ZhcmlhYmxlcy5iaW99PC91PlxuXG4qKlByb2ZpbGUgUGljdHVyZToqKiA8dT4ke3ZhcmlhYmxlcy5wcm9maWxlUGljdHVyZX08L3U+XG5cbioqU3RhdHVzOioqIDx1PiR7dmFyaWFibGVzLmlzQWN0aXZlID8gJ0FjdGl2ZScgOiAnSW5hY3RpdmUnfTwvdT5cblxuIyMgMy4gVVNFUiBSSUdIVFMgQU5EIFJFU1BPTlNJQklMSVRJRVNcblxuMy4xIFRoZSBVc2VyIGhhcyB0aGUgcmlnaHQgdG86XG4gICAtIEFjdGl2YXRlIGFuZCBkZWFjdGl2YXRlIHRoZWlyIHByb2ZpbGUgYXQgYW55IHRpbWVcbiAgIC0gVXBkYXRlIHRoZWlyIHByb2ZpbGUgaW5mb3JtYXRpb24gaW5jbHVkaW5nIG5pY2tuYW1lLCBiaW8sIGFuZCBwcm9maWxlIHBpY3R1cmVcbiAgIC0gTWFpbnRhaW4gY29udHJvbCBvdmVyIHRoZWlyIHByb2ZpbGUgZGF0YVxuXG4zLjIgVGhlIFVzZXIgYWdyZWVzIHRvOlxuICAgLSBQcm92aWRlIGFjY3VyYXRlIGFuZCB1cC10by1kYXRlIGluZm9ybWF0aW9uXG4gICAtIFVzZSBhcHByb3ByaWF0ZSBjb250ZW50IHRoYXQgY29tcGxpZXMgd2l0aCBwbGF0Zm9ybSBndWlkZWxpbmVzXG4gICAtIFRha2UgcmVzcG9uc2liaWxpdHkgZm9yIGFsbCBwcm9maWxlLXJlbGF0ZWQgYWN0aXZpdGllc1xuXG4jIyA0LiBQUk9GSUxFIE1BTkFHRU1FTlRcblxuNC4xICoqUHJvZmlsZSBBY3RpdmF0aW9uOioqIFVzZXJzIG1heSBhY3RpdmF0ZSB0aGVpciBwcm9maWxlIHRvIG1ha2UgaXQgdmlzaWJsZSBhbmQgZnVuY3Rpb25hbCBvbiB0aGUgcGxhdGZvcm0uXG5cbjQuMiAqKlByb2ZpbGUgVXBkYXRlczoqKiBBY3RpdmUgcHJvZmlsZXMgbWF5IGJlIHVwZGF0ZWQgd2l0aCBuZXcgaW5mb3JtYXRpb24gZm9yIG5pY2tuYW1lLCBiaW8sIGFuZCBwcm9maWxlIHBpY3R1cmUuXG5cbjQuMyAqKlByb2ZpbGUgRGVhY3RpdmF0aW9uOioqIFVzZXJzIG1heSBkZWFjdGl2YXRlIHRoZWlyIHByb2ZpbGUgYXQgYW55IHRpbWUsIG1ha2luZyBpdCBpbmFjdGl2ZSBhbmQgaGlkZGVuIGZyb20gcHVibGljIHZpZXcuXG5cbiMjIDUuIERBVEEgSEFORExJTkdcblxuNS4xIEFsbCBwcm9maWxlIGRhdGEgaXMgc3RvcmVkIHNlY3VyZWx5IGFuZCBtYW5hZ2VkIGFjY29yZGluZyB0byB0aGUgcGxhdGZvcm0ncyBwcml2YWN5IHBvbGljeS5cblxuNS4yIFByb2ZpbGUgZGVhY3RpdmF0aW9uIGRvZXMgbm90IGRlbGV0ZSBkYXRhIGJ1dCBtYWtlcyBpdCBpbmFjdGl2ZSBhbmQgaW5hY2Nlc3NpYmxlIHRvIG90aGVyIHVzZXJzLlxuXG4jIyA2LiBTSUdOQVRVUkVcblxuQnkgc2lnbmluZyB0aGlzIGFncmVlbWVudCwgdGhlIFVzZXIgY29uZmlybXMgYWNjZXB0YW5jZSBvZiB0aGVzZSB0ZXJtcyBhbmQgY29uZGl0aW9ucy5cblxuPHU+JHt2YXJpYWJsZXMudXNlclNpZ25hdHVyZX08L3U+XG4oVXNlciBTaWduYXR1cmUpXG5cbkJ5IHNpZ25pbmcsIEkgY29uZmlybSB0aGF0IEkgaGF2ZSByZWFkLCB1bmRlcnN0b29kLCBhbmQgYWdyZWUgdG8gYmUgbGVnYWxseSBib3VuZCBieSBhbGwgdGVybXMgb2YgdGhpcyBhZ3JlZW1lbnQuIn0sImV4ZWN1dGlvbiI6eyJzdGF0ZXMiOnsiSU5BQ1RJVkUiOnsibmFtZSI6IlByb2ZpbGUgSW5hY3RpdmUiLCJkZXNjcmlwdGlvbiI6IlByb2ZpbGUgaXMgaW5hY3RpdmUgYW5kIG5vdCB2aXNpYmxlIHRvIG90aGVyIHVzZXJzLiBVc2VyIGNhbiBhY3RpdmF0ZSB0aGUgcHJvZmlsZS4ifSwiQUNUSVZFIjp7Im5hbWUiOiJQcm9maWxlIEFjdGl2ZSIsImRlc2NyaXB0aW9uIjoiUHJvZmlsZSBpcyBhY3RpdmUgYW5kIHZpc2libGUgdG8gb3RoZXIgdXNlcnMuIFVzZXIgY2FuIHVwZGF0ZSBwcm9maWxlIGZpZWxkcyBvciBkZWFjdGl2YXRlLiJ9fSwiaW5pdGlhbGl6ZSI6eyJuYW1lIjoiSW5pdGlhbGl6ZSBQcm9maWxlIiwiZGVzY3JpcHRpb24iOiJJbml0aWFsaXplIHRoZSBwcm9maWxlIGFncmVlbWVudCB3aXRoIHVzZXIgYWRkcmVzcyIsImluaXRpYWxTdGF0ZSI6IklOQUNUSVZFIiwiZGF0YSI6eyJ1c2VyRXRoQWRkcmVzcyI6IiR7dmFyaWFibGVzLnVzZXJFdGhBZGRyZXNzfSIsImlzQWN0aXZlIjoiJHt2YXJpYWJsZXMuaXNBY3RpdmV9In19LCJpbnB1dHMiOnsicHJvZmlsZUFjdGl2YXRpb24iOnsidHlwZSI6IlZlcmlmaWVkQ3JlZGVudGlhbEVJUDcxMiIsInNjaGVtYSI6InZlcmlmaWVkLWNyZWRlbnRpYWwtZWlwNzEyLnNjaGVtYS5qc29uIiwiZGlzcGxheU5hbWUiOiJQcm9maWxlIEFjdGl2YXRpb24iLCJkZXNjcmlwdGlvbiI6IlVzZXIgYWN0aXZhdGVzIHRoZWlyIHByb2ZpbGUgdG8gbWFrZSBpdCB2aXNpYmxlIGFuZCBmdW5jdGlvbmFsLiIsImRhdGEiOnsidXNlclNpZ25hdHVyZSI6IiR7dmFyaWFibGVzLnVzZXJTaWduYXR1cmV9IiwicHJvZmlsZUNyZWF0ZWRBdCI6IiR7dmFyaWFibGVzLnByb2ZpbGVDcmVhdGVkQXR9IiwiaXNBY3RpdmUiOnsidHlwZSI6ImJvb2xlYW4iLCJuYW1lIjoiUHJvZmlsZSBBY3RpdmUgU3RhdHVzIiwiZGVzY3JpcHRpb24iOiJXaGV0aGVyIHRoZSBwcm9maWxlIGlzIGN1cnJlbnRseSBhY3RpdmUiLCJ2YWxpZGF0aW9uIjp7InJlcXVpcmVkIjp0cnVlfX19LCJpc3N1ZXIiOiIke3ZhcmlhYmxlcy51c2VyRXRoQWRkcmVzcy52YWx1ZX0ifSwicHJvZmlsZVVwZGF0ZSI6eyJ0eXBlIjoiVmVyaWZpZWRDcmVkZW50aWFsRUlQNzEyIiwic2NoZW1hIjoidmVyaWZpZWQtY3JlZGVudGlhbC1laXA3MTIuc2NoZW1hLmpzb24iLCJkaXNwbGF5TmFtZSI6IlByb2ZpbGUgVXBkYXRlIiwiZGVzY3JpcHRpb24iOiJVc2VyIHVwZGF0ZXMgdGhlaXIgcHJvZmlsZSBpbmZvcm1hdGlvbiBpbmNsdWRpbmcgbmlja25hbWUsIGJpbywgb3IgcHJvZmlsZSBwaWN0dXJlLiIsImRhdGEiOnsibmlja25hbWUiOnsidHlwZSI6InN0cmluZyIsIm5hbWUiOiJQcm9maWxlIE5pY2tuYW1lIiwiZGVzY3JpcHRpb24iOiJEaXNwbGF5IG5hbWUgZm9yIHRoZSB1c2VyIHByb2ZpbGUiLCJ2YWxpZGF0aW9uIjp7InJlcXVpcmVkIjpmYWxzZSwibWF4TGVuZ3RoIjo1MH19LCJiaW8iOnsidHlwZSI6InN0cmluZyIsIm5hbWUiOiJQcm9maWxlIEJpbyIsImRlc2NyaXB0aW9uIjoiVXNlciBiaW9ncmFwaHkgb3IgZGVzY3JpcHRpb24iLCJ2YWxpZGF0aW9uIjp7InJlcXVpcmVkIjpmYWxzZSwibWF4TGVuZ3RoIjo1MDB9fSwicHJvZmlsZVBpY3R1cmUiOnsidHlwZSI6InN0cmluZyIsIm5hbWUiOiJQcm9maWxlIFBpY3R1cmUiLCJkZXNjcmlwdGlvbiI6IlVSTCBvciBoYXNoIG9mIHRoZSBwcm9maWxlIHBpY3R1cmUiLCJ2YWxpZGF0aW9uIjp7InJlcXVpcmVkIjpmYWxzZX19fSwiaXNzdWVyIjoiJHt2YXJpYWJsZXMudXNlckV0aEFkZHJlc3MudmFsdWV9In0sInByb2ZpbGVEZWFjdGl2YXRpb24iOnsidHlwZSI6IlZlcmlmaWVkQ3JlZGVudGlhbEVJUDcxMiIsInNjaGVtYSI6InZlcmlmaWVkLWNyZWRlbnRpYWwtZWlwNzEyLnNjaGVtYS5qc29uIiwiZGlzcGxheU5hbWUiOiJQcm9maWxlIERlYWN0aXZhdGlvbiIsImRlc2NyaXB0aW9uIjoiVXNlciBkZWFjdGl2YXRlcyB0aGVpciBwcm9maWxlLCBtYWtpbmcgaXQgaW5hY3RpdmUgYW5kIGhpZGRlbiBmcm9tIHB1YmxpYyB2aWV3LiIsImRhdGEiOnsiaXNBY3RpdmUiOnsidHlwZSI6ImJvb2xlYW4iLCJuYW1lIjoiUHJvZmlsZSBBY3RpdmUgU3RhdHVzIiwiZGVzY3JpcHRpb24iOiJXaGV0aGVyIHRoZSBwcm9maWxlIGlzIGN1cnJlbnRseSBhY3RpdmUiLCJ2YWxpZGF0aW9uIjp7InJlcXVpcmVkIjp0cnVlfX0sImRlYWN0aXZhdGlvblJlYXNvbiI6eyJ0eXBlIjoic3RyaW5nIiwibmFtZSI6IkRlYWN0aXZhdGlvbiBSZWFzb24iLCJkZXNjcmlwdGlvbiI6Ik9wdGlvbmFsIHJlYXNvbiBmb3IgZGVhY3RpdmF0aW5nIHRoZSBwcm9maWxlIiwidmFsaWRhdGlvbiI6eyJyZXF1aXJlZCI6ZmFsc2UsIm1heExlbmd0aCI6MjAwfX19LCJpc3N1ZXIiOiIke3ZhcmlhYmxlcy51c2VyRXRoQWRkcmVzcy52YWx1ZX0ifX0sInRyYW5zaXRpb25zIjpbeyJmcm9tIjoiSU5BQ1RJVkUiLCJ0byI6IkFDVElWRSIsImNvbmRpdGlvbnMiOlt7InR5cGUiOiJpc1ZhbGlkIiwiaW5wdXQiOiJwcm9maWxlQWN0aXZhdGlvbiJ9XX0seyJmcm9tIjoiQUNUSVZFIiwidG8iOiJBQ1RJVkUiLCJjb25kaXRpb25zIjpbeyJ0eXBlIjoiaXNWYWxpZCIsImlucHV0IjoicHJvZmlsZVVwZGF0ZSJ9XX0seyJmcm9tIjoiQUNUSVZFIiwidG8iOiJJTkFDVElWRSIsImNvbmRpdGlvbnMiOlt7InR5cGUiOiJpc1ZhbGlkIiwiaW5wdXQiOiJwcm9maWxlRGVhY3RpdmF0aW9uIn1dfV19fQ==",
+    "params": {
+      "userEthAddress": "0xB49e45Affd4963374e72f850B6Cae84939e58F78",
+      "isActive": false
+    }
+  },
+  "type": [
+    "VerifiableCredential",
+    "AgreementCredential"
+  ],
+  "issuanceDate": "2025-06-13T01:58:29.452Z",
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1"
+  ],
+  "proof": {
+    "verificationMethod": "did:pkh:eip155:1:0xB49e45Affd4963374e72f850B6Cae84939e58F78#blockchainAccountId",
+    "created": "2025-06-13T01:58:29.452Z",
+    "proofPurpose": "assertionMethod",
+    "type": "EthereumEip712Signature2021",
+    "proofValue": "0x1ee7d9a28eea615c66a24ccf3d393400283475fe0e207ba2bd39354eace8d4eb13b4760b4c21d4d7400f3870cebdacd6b4745fe425a30c5f0d495e63fe6cf56e1b",
+    "eip712": {
+      "domain": {
+        "chainId": 1,
+        "name": "VerifiableCredential",
+        "version": "1"
+      },
+      "types": {
+        "EIP712Domain": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "type": "string"
+          },
+          {
+            "name": "chainId",
+            "type": "uint256"
+          }
+        ],
+        "CredentialSubject": [
+          {
+            "name": "agreement",
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "type": "string"
+          },
+          {
+            "name": "params",
+            "type": "Params"
+          }
+        ],
+        "Params": [
+          {
+            "name": "isActive",
+            "type": "bool"
+          },
+          {
+            "name": "userEthAddress",
+            "type": "string"
+          }
+        ],
+        "Issuer": [
+          {
+            "name": "id",
+            "type": "string"
+          }
+        ],
+        "Proof": [
+          {
+            "name": "created",
+            "type": "string"
+          },
+          {
+            "name": "proofPurpose",
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "type": "string"
+          },
+          {
+            "name": "verificationMethod",
+            "type": "string"
+          }
+        ],
+        "VerifiableCredential": [
+          {
+            "name": "@context",
+            "type": "string[]"
+          },
+          {
+            "name": "credentialSubject",
+            "type": "CredentialSubject"
+          },
+          {
+            "name": "issuanceDate",
+            "type": "string"
+          },
+          {
+            "name": "issuer",
+            "type": "Issuer"
+          },
+          {
+            "name": "proof",
+            "type": "Proof"
+          },
+          {
+            "name": "type",
+            "type": "string[]"
+          }
+        ]
+      },
+      "primaryType": "VerifiableCredential"
+    }
+  }
+}

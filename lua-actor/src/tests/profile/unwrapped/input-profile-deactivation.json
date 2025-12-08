@@ -1,0 +1,8 @@
+{
+  "inputId": "profileDeactivation",
+  "type": "signedFields",
+  "values": {
+    "isActive": false,
+    "deactivationReason": "Taking a break from the platform to focus on personal projects"
+  }
+} 

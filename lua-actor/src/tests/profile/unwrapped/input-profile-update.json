@@ -1,0 +1,9 @@
+{
+  "inputId": "profileUpdate",
+  "type": "signedFields",
+  "values": {
+    "nickname": "CryptoNinja",
+    "bio": "Blockchain developer and Web3 enthusiast. Building the decentralized future one smart contract at a time.",
+    "profilePicture": "https://ipfs.io/ipfs/QmbWqxBEKC3P8tqsKc98xmWNzrzDtRLMiMPL8wBuTGsMnR"
+  }
+} 

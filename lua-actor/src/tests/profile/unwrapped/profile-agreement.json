@@ -1,0 +1,191 @@
+{
+  "metadata": {
+    "id": "did:example:profile-v1",
+    "templateId": "did:template:profile-v1",
+    "version": "1.0.0",
+    "createdAt": "2024-03-20T12:00:00Z",
+    "name": "Profile Agreement",
+    "author": "Agreements Protocol",
+    "description": "Template for user profile management with activation and field updates"
+  },
+  "variables": {
+    "userEthAddress": {
+      "type": "address",
+      "name": "User Address",
+      "description": "Ethereum address of the profile owner",
+      "validation": {
+        "required": true
+      }
+    },
+    "userSignature": {
+      "type": "signature",
+      "name": "User Signature",
+      "description": "Digital signature of the profile owner",
+      "validation": {
+        "required": true
+      }
+    },
+    "profileCreatedAt": {
+      "type": "dateTime",
+      "name": "Profile Creation Date",
+      "description": "The date when this profile was created",
+      "validation": {
+        "required": true
+      }
+    },
+    "nickname": {
+      "type": "string",
+      "name": "Profile Nickname",
+      "description": "Display name for the user profile",
+      "validation": {
+        "required": false,
+        "maxLength": 50
+      }
+    },
+    "bio": {
+      "type": "string", 
+      "name": "Profile Bio",
+      "description": "User biography or description",
+      "validation": {
+        "required": false,
+        "maxLength": 500
+      }
+    },
+    "profilePicture": {
+      "type": "string",
+      "name": "Profile Picture",
+      "description": "URL or hash of the profile picture",
+      "validation": {
+        "required": false
+      }
+    },
+    "isActive": {
+      "type": "boolean",
+      "name": "Profile Active Status",
+      "description": "Whether the profile is currently active",
+      "validation": {
+        "required": true
+      }
+    },
+    "deactivationReason": {
+      "type": "string",
+      "name": "Deactivation Reason",
+      "description": "Optional reason for deactivating the profile",
+      "validation": {
+        "required": false,
+        "maxLength": 200
+      }
+    }
+  },
+  "content": {
+    "type": "md",
+    "data": "# PROFILE AGREEMENT\n\n**PROFILE OWNER:**\n\n<u>${variables.userEthAddress}</u> (\"User Address\")\n\n**PROFILE CREATION DATE:**\n\n<u>${variables.profileCreatedAt}</u> (\"Creation Date\")\n\n## 1. INTRODUCTION\n\nThis Profile Agreement (the \"Agreement\") governs the management and usage of a user profile within the platform.\n\nThe purpose of this Agreement is to establish the terms and conditions for profile activation, updates, and deactivation.\n\n## 2. PROFILE INFORMATION\n\n**Nickname:** <u>${variables.nickname}</u>\n\n**Bio:** <u>${variables.bio}</u>\n\n**Profile Picture:** <u>${variables.profilePicture}</u>\n\n**Status:** <u>${variables.isActive ? 'Active' : 'Inactive'}</u>\n\n## 3. USER RIGHTS AND RESPONSIBILITIES\n\n3.1 The User has the right to:\n   - Activate and deactivate their profile at any time\n   - Update their profile information including nickname, bio, and profile picture\n   - Maintain control over their profile data\n\n3.2 The User agrees to:\n   - Provide accurate and up-to-date information\n   - Use appropriate content that complies with platform guidelines\n   - Take responsibility for all profile-related activities\n\n## 4. PROFILE MANAGEMENT\n\n4.1 **Profile Activation:** Users may activate their profile to make it visible and functional on the platform.\n\n4.2 **Profile Updates:** Active profiles may be updated with new information for nickname, bio, and profile picture.\n\n4.3 **Profile Deactivation:** Users may deactivate their profile at any time, making it inactive and hidden from public view.\n\n## 5. DATA HANDLING\n\n5.1 All profile data is stored securely and managed according to the platform's privacy policy.\n\n5.2 Profile deactivation does not delete data but makes it inactive and inaccessible to other users.\n\n## 6. SIGNATURE\n\nBy signing this agreement, the User confirms acceptance of these terms and conditions.\n\n<u>${variables.userSignature}</u>\n(User Signature)\n\nBy signing, I confirm that I have read, understood, and agree to be legally bound by all terms of this agreement."
+  },
+  "execution": {
+    "states": {
+      "INACTIVE": {
+        "name": "Profile Inactive",
+        "description": "Profile is inactive and not visible to other users. User can activate the profile."
+      },
+      "ACTIVE": {
+        "name": "Profile Active", 
+        "description": "Profile is active and visible to other users. User can update profile fields or deactivate."
+      }
+    },
+    "initialize": {
+      "name": "Initialize Profile",
+      "description": "Initialize the profile agreement with user address",
+      "initialState": "INACTIVE",
+      "data": {
+        "userEthAddress": "${variables.userEthAddress}",
+        "isActive": "${variables.isActive}"
+      }
+    },
+    "inputs": {
+      "profileActivation": {
+        "type": "VerifiedCredentialEIP712",
+        "schema": "verified-credential-eip712.schema.json",
+        "displayName": "Profile Activation",
+        "description": "User activates their profile to make it visible and functional.",
+        "data": {
+          "userSignature": "${variables.userSignature}",
+          "profileCreatedAt": "${variables.profileCreatedAt}",
+          "isActive": {
+            "type": "boolean",
+            "name": "Profile Active Status", 
+            "description": "Whether the profile is currently active",
+            "validation": {
+              "required": true
+            }
+          }
+        },
+        "issuer": "${variables.userEthAddress.value}"
+      },
+      "profileUpdate": {
+        "type": "VerifiedCredentialEIP712", 
+        "schema": "verified-credential-eip712.schema.json",
+        "displayName": "Profile Update",
+        "description": "User updates their profile information including nickname, bio, or profile picture.",
+        "issuer": "${variables.userEthAddress.value}"
+      },
+      "profileDeactivation": {
+        "type": "VerifiedCredentialEIP712",
+        "schema": "verified-credential-eip712.schema.json", 
+        "displayName": "Profile Deactivation",
+        "description": "User deactivates their profile, making it inactive and hidden from public view.",
+        "data": {
+          "isActive": {
+            "type": "boolean",
+            "name": "Profile Active Status",
+            "description": "Whether the profile is currently active", 
+            "validation": {
+              "required": true
+            }
+          },
+          "deactivationReason": {
+            "type": "string",
+            "name": "Deactivation Reason",
+            "description": "Optional reason for deactivating the profile",
+            "validation": {
+              "required": false,
+              "maxLength": 200
+            }
+          }
+        },
+        "issuer": "${variables.userEthAddress.value}"
+      }
+    },
+    "transitions": [
+      {
+        "from": "INACTIVE",
+        "to": "ACTIVE", 
+        "conditions": [
+          {
+            "type": "isValid",
+            "input": "profileActivation"
+          }
+        ]
+      },
+      {
+        "from": "ACTIVE",
+        "to": "ACTIVE",
+        "conditions": [
+          {
+            "type": "isValid", 
+            "input": "profileUpdate"
+          }
+        ]
+      },
+      {
+        "from": "ACTIVE",
+        "to": "INACTIVE",
+        "conditions": [
+          {
+            "type": "isValid",
+            "input": "profileDeactivation"
+          }
+        ]
+      }
+    ]
+  }
+} 
