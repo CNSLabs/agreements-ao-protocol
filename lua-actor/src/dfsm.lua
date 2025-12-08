@@ -125,8 +125,17 @@ function DFSM.new(doc, expectVCWrapper, params)
     if type(agreement.execution.states) ~= "table" then
         error("States must be defined as an object")
     end
-    if agreement.execution.initialize and not agreement.execution.initialize.data then
-        error("Initialization section must contain a 'data' field")
+    if agreement.execution.initialize then
+        if not agreement.execution.initialize.data then
+            error("Initialization section must contain a 'data' field")
+        end
+        if not agreement.execution.initialize.initialState then
+            error("Initialization section must specify an initialState")
+        end
+        -- Store the initial state from the initialize section
+        self.initialState = agreement.execution.initialize.initialState
+    else
+        error("Agreement document must have an initialize section with initialState")
     end
     if agreement.execution.inputs and type(agreement.execution.inputs) ~= "table" then
         error("Inputs must be an object with input IDs as keys")
@@ -213,19 +222,10 @@ function DFSM:validate()
         error("Agreement document must have states defined")
     end
 
-    -- Find initial state by looking for states with no incoming transitions
-    local initialStateId = nil
-    for stateId, _ in pairs(self.states) do
-        if not self:hasIncomingTransitions(stateId) then
-            if initialStateId then
-                error(string.format("Multiple potential initial states found (states with no incoming transitions): %s and %s", initialStateId, stateId))
-            end
-            initialStateId = stateId
-        end
-    end
-
-    if not initialStateId then
-        error("No initial state found (no state without incoming transitions)")
+    -- Use the explicitly specified initial state
+    local initialStateId = self.initialState
+    if not self.states[initialStateId] then
+        error(string.format("Specified initial state '%s' does not exist in states definition", initialStateId))
     end
 
     -- Check that all states referenced in transitions exist

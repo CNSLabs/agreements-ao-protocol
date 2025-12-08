@@ -12,22 +12,22 @@
       "scope": "Sample scope",
       "partyBEthAddress": "0xBe32388C134a952cdBCc5673E93d46FfD8b85065"
     },
-    "documentHash": "0xb4ecf6443c783f68889414326c13e10b641e4e0442e1cb97eaa1e5e91af138cb"
+    "documentHash": "0x558d3f860d4c9007cf359adb7d2780a53ea770bb7d5e9b2aeaa17d9e40a56e56"
   },
   "type": [
     "VerifiableCredential",
     "AgreementInputCredential"
   ],
-  "issuanceDate": "2025-05-22T14:55:28.809Z",
+  "issuanceDate": "2025-06-10T15:56:29.820Z",
   "@context": [
     "https://www.w3.org/2018/credentials/v1"
   ],
   "proof": {
     "verificationMethod": "did:pkh:eip155:1:0x67fD5A5ec681b1208308813a2B3A0DD431Be7278#blockchainAccountId",
-    "created": "2025-05-22T14:55:28.809Z",
+    "created": "2025-06-10T15:56:29.820Z",
     "proofPurpose": "assertionMethod",
     "type": "EthereumEip712Signature2021",
-    "proofValue": "0xa746bbc33fd5359e2707d5032b87a57bb69b1a7c5f66b0f5391a4d360a86967f51e87eccf202dbb88832b3e89da7aaf6a45081fb920306d8447c48f04f7b93d81c",
+    "proofValue": "0xfce5a201e60b725ca5f73b7c1a3f4cad0f086ad55f15723c0d8b76f446755e104eb22cde4123b87cd6926b9dccb060dcc5f5117d919e9277f57f9532900744781c",
     "eip712": {
       "domain": {
         "chainId": 1,

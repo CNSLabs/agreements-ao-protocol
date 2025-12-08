@@ -114,6 +114,7 @@
     "initialize": {
       "name": "Initialize",
       "description": "Initialize the grant",
+      "initialState": "PENDING_PARTY_A_SIGNATURE",
       "data": {
         "partyAEthAddress": "${variables.partyAEthAddress}",
         "partyBEthAddress": "${variables.partyBEthAddress}"

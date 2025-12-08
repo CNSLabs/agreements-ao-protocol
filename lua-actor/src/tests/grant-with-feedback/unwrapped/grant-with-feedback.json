@@ -151,6 +151,7 @@
     "initialize": {
       "name": "Initialize Grant",
       "description": "Initialize the grant with grantor and recipient addresses",
+      "initialState": "AWAITING_TEMPLATE_VARIABLES",
       "data": {
         "grantorEthAddress": "${variables.grantorEthAddress}",
         "recipientEthAddress": "${variables.recipientEthAddress}"

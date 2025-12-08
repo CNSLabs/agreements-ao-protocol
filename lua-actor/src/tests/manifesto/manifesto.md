@@ -7,16 +7,16 @@ This state machine implements a simple manifesto agreement that supports control
 ```mermaid
 stateDiagram-v2
     direction LR
-    
+  
     [*] --> INITIALIZED: initialize
-    
+  
     INITIALIZED --> ACTIVE: activate
     ACTIVE --> INACTIVE: deactivate  
     INACTIVE --> ACTIVE: activate
     ACTIVE --> ACTIVE: signManifesto
-    
+  
     note right of ACTIVE : Accepts signatures<br/>while ACTIVE
-    
+  
     ACTIVE --> [*]: (terminal if no more transitions)
     INACTIVE --> [*]: (terminal if no more transitions)
 ```
@@ -32,6 +32,7 @@ stateDiagram-v2
 ## Test Scenarios
 
 ### 1. Manifesto Signature Collection (Main Happy Path)
+
 This demonstrates the primary use case: collecting signatures from multiple parties when the manifesto is active.
 
 ```mermaid
@@ -47,6 +48,7 @@ stateDiagram-v2
 ```
 
 Happy Path Steps:
+
 1. **Initialization**:
    - Manifesto is created and starts in `INITIALIZED` state
 2. **Controller Activation**:
@@ -66,6 +68,7 @@ Happy Path Steps:
    - No more signatures can be collected in `INACTIVE` state
 
 ### 2. Signature Collection Flow
+
 This demonstrates the main use case: collecting signatures from multiple parties when the manifesto is active.
 
 ```mermaid
@@ -80,16 +83,19 @@ stateDiagram-v2
 ```
 
 **Signature Details:**
+
 - **Alice Johnson**: `0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db`
 - **Bob Smith**: `0xBe32388C134a952cdBCc5673E93d46FfD8b85065`
 
 **Key Points:**
+
 - **Open Signing**: Anyone can sign when manifesto is `ACTIVE`
 - **No Issuer Validation**: Signatures don't require specific issuer validation
 - **State Persistence**: Manifesto remains `ACTIVE` to continue collecting signatures
 - **Controller Control**: Only controller can start/stop signature collection
 
 ### 3. Security Validation Tests
+
 These tests verify that only the designated controller can perform state transitions.
 
 ```mermaid
@@ -102,6 +108,7 @@ stateDiagram-v2
 ```
 
 Test Cases:
+
 1. **Valid Controller Operations**:
    - Controller address: `0x5B38Da6a701c568545dCfcB03FcB875f56beddC4`
    - All `activate`/`deactivate` inputs succeed when from valid controller
@@ -113,6 +120,7 @@ Test Cases:
    - Should fail with "Unknown input" error
 
 ### 4. Complete Test Coverage
+
 This shows all test scenarios including error cases and edge conditions:
 
 ```mermaid
@@ -130,6 +138,7 @@ stateDiagram-v2
 ```
 
 Test Scenarios:
+
 1. **Activate manifesto for first time** (`INITIALIZED → ACTIVE`)
 2. **Deactivate manifesto** (`ACTIVE → INACTIVE`)
 3. **Try to deactivate when already inactive** (should fail with "No valid transition")
@@ -140,15 +149,18 @@ Test Scenarios:
 8. **Invalid issuer** (unwrapped only - should fail with "Issuer mismatch")
 
 ### 5. State Transition Rules
+
 This documents the allowed and forbidden transitions in the state machine.
 
 **Allowed Transitions:**
+
 - `INITIALIZED → ACTIVE` (via `activate` input)
 - `ACTIVE → INACTIVE` (via `deactivate` input)
 - `INACTIVE → ACTIVE` (via `activate` input)
 - `ACTIVE → ACTIVE` (via `signManifesto` input)
 
 **Forbidden Transitions:**
+
 - `INITIALIZED → INACTIVE` (must activate first)
 - `INACTIVE → INACTIVE` (via `deactivate` - fails with "No valid transition")
 - `INACTIVE → ACTIVE` (via `signManifesto` - signatures only accepted when active)
@@ -158,6 +170,7 @@ This documents the allowed and forbidden transitions in the state machine.
 ### Variables
 
 #### Controller Variable
+
 ```json
 {
   "controller": {
@@ -172,6 +185,7 @@ This documents the allowed and forbidden transitions in the state machine.
 ```
 
 #### Signature Variables
+
 ```json
 {
   "signerName": {
@@ -203,6 +217,7 @@ This documents the allowed and forbidden transitions in the state machine.
 ```
 
 #### Activate Input
+
 ```json
 {
   "activate": {
@@ -219,6 +234,7 @@ This documents the allowed and forbidden transitions in the state machine.
 ```
 
 #### Deactivate Input
+
 ```json
 {
   "deactivate": {
@@ -235,6 +251,7 @@ This documents the allowed and forbidden transitions in the state machine.
 ```
 
 #### Sign Manifesto Input
+
 ```json
 {
   "signManifesto": {
@@ -252,6 +269,7 @@ This documents the allowed and forbidden transitions in the state machine.
 ```
 
 **Key Features:**
+
 - **No Issuer Validation**: Unlike controller inputs, signatures don't specify an `issuer` field
 - **Open Access**: Anyone can submit a signature when the manifesto is `ACTIVE`
 - **Rich Data**: Captures signer name, address, and signature content
@@ -264,6 +282,7 @@ The manifesto state machine supports both **wrapped** and **unwrapped** testing 
 ### Unwrapped Test Format (`validateVC = false`)
 
 #### Controller Inputs (with Issuer Validation)
+
 For controller inputs (`activate`/`deactivate`), inputs must use DID format for proper issuer validation:
 
 ```json
@@ -284,6 +303,7 @@ For controller inputs (`activate`/`deactivate`), inputs must use DID format for 
 ```
 
 #### Signature Inputs (no Issuer Validation)
+
 For signature collection, the format is simpler since no issuer validation is required:
 
 ```json
@@ -303,6 +323,7 @@ For signature collection, the format is simpler since no issuer validation is re
 For wrapped tests, inputs are full Verifiable Credentials with cryptographic signatures:
 
 #### Wrapped Agreement Document
+
 ```json
 {
   "issuer": {
@@ -325,16 +346,18 @@ For wrapped tests, inputs are full Verifiable Credentials with cryptographic sig
 ```
 
 #### Wrapped Input Examples
+
 All inputs include full cryptographic proofs and are generated using Veramo:
 
 - `input-activate.wrapped.json` - Controller activation
-- `input-deactivate.wrapped.json` - Controller deactivation  
+- `input-deactivate.wrapped.json` - Controller deactivation
 - `input-alice-signature.wrapped.json` - Alice's signature
 - `input-bob-signature.wrapped.json` - Bob's signature
 
 ### Test Coverage
 
 **Unwrapped Tests (8 tests)**:
+
 1. ✅ Activate manifesto for first time (`INITIALIZED → ACTIVE`)
 2. ✅ Deactivate manifesto (`ACTIVE → INACTIVE`)
 3. ✅ Try to deactivate when already inactive (failure case)
@@ -345,6 +368,7 @@ All inputs include full cryptographic proofs and are generated using Veramo:
 8. ✅ Invalid issuer - not controller (failure case)
 
 **Wrapped Tests (8 tests)**:
+
 1. ✅ Activate manifesto for first time (`INITIALIZED → ACTIVE`)
 2. ✅ Deactivate manifesto (`ACTIVE → INACTIVE`)
 3. ✅ Try to deactivate when already inactive (failure case)
@@ -358,12 +382,14 @@ All inputs include full cryptographic proofs and are generated using Veramo:
 *Plus initial state verification for each suite*
 
 **Test Assertions: 36 total**
+
 - Each successful test includes 2 assertions (success + state transition)
 - Each failed test includes 3 assertions (failure + error message + state preservation)
 - Unwrapped: 19 assertions across 8 test scenarios
 - Wrapped: 17 assertions across 8 test scenarios
 
-**Important Differences**: 
+**Important Differences**:
+
 - **Unwrapped**: Manual issuer validation using DID format
 - **Wrapped**: Cryptographic verification handles issuer validation
 - **Unwrapped**: Simplified JSON input format
@@ -379,6 +405,7 @@ npx tsx ./src/manifesto/create-credential.ts
 ```
 
 This script:
+
 1. **Creates the wrapped manifesto agreement** with base64-encoded JSON
 2. **Generates controller inputs** (`activate`, `deactivate`) signed by the controller
 3. **Generates signature inputs** (`alice-signature`, `bob-signature`) signed by respective parties
@@ -388,13 +415,13 @@ This script:
 ## Implementation Notes
 
 - **Dual Validation Modes**: Supports both unwrapped (manual validation) and wrapped (cryptographic validation)
-- **Issuer Validation**: 
+- **Issuer Validation**:
   - **Unwrapped**: Manual validation using DID format extraction
   - **Wrapped**: Cryptographic signature verification
 - **Variable Resolution**: Controller address resolved from initialization parameters
 - **State Persistence**: Each transition recorded with metadata (issuer, timestamp, hash)
 - **Error Handling**: Clear error messages for invalid inputs, transitions, and issuers
-- **Security**: 
+- **Security**:
   - **Controller Actions**: Restricted to designated controller address
   - **Signature Collection**: Open access when manifesto is active
   - **Cryptographic Integrity**: Full EIP-712 signature verification in wrapped mode
@@ -402,9 +429,36 @@ This script:
 ## Differences from Other State Machines
 
 Unlike complex workflows (like grant-with-feedback), the manifesto state machine is designed for:
+
 - **Simplicity**: Only three states with basic transitions
 - **Dual Access Model**: Controller-based management for activation/deactivation + open signature collection
 - **Signature Collection**: Primary use case is gathering signatures from multiple parties when active
 - **Reusability**: Can be activated/deactivated multiple times unlike one-way agreement flows
 - **Mixed Validation**: Strong issuer validation for controller actions, no validation for signatures
-- **State Persistence**: Remains in ACTIVE state while collecting multiple signatures 
+- **State Persistence**: Remains in ACTIVE state while collecting multiple signatures
+
+# The Consensys Network State Manifesto
+
+The modern nation-state is a legacy system incapable of navigating the complexities of our hyper-connected, technologically-transformed, post-globalized world. Institutions that once promised to serve humanity now concentrate power and wealth, betraying their foundational purpose.
+
+To move forward, we must unlearn the paradigms of the past and reimagine how we coordinate, govern, and create. The rise of network states, rooted not in geography but in shared values and digital sovereignty, signals the dawn of a new societal substrate, a world where communities self-organize beyond borders, united by principles rather than proximity.
+
+The Consensys Network State is a continuation of Ethereum’s founding vision: a decentralized, open, and permissionless system that empowers individuals and collectives to operate beyond the nation-state. We are not an island, we are part of a broader constellation of value-driven communities aligned around autonomy, agency, and shared purpose.
+
+Citizens of the Consensys Network State are not defined by passports, borders, or bloodlines. We are linked by a culture of interconnectedness, plurality, and digital self-sovereignty. We recognize all people, human and non-human, as deserving of dignity, privacy, and the right to self-determination.
+
+We reject the arbitrary divisions of legacy systems. In their place, we cultivate a future where people and communities define their own identities, govern their own affairs, and co-create institutions that reflect their values. Local sovereignty becomes a strength, not a boundary. Local communities support each other across distances and divisions, sharing knowledge, skills, and technology.
+
+Across the network state, founders access support, mentorship, guidance and capital, mutual credit systems link informal traders in Manila with cooperatives in São Paulo. Decentralized lending protocols fund agricultural co-ops in Nairobi. Housing cooperatives in Athens coordinate with mutual aid groups in Oakland. Community crowdfunding supports regenerative manufacturing hubs in Kerala. These are not thought experiments, they are living examples of coordination without borders, trust built through code, and solidarity sustained through shared purpose.
+
+We transcend the constraints of traditional governance by operating on a higher layer of coordination: a meta-system designed to serve its citizens transparently, efficiently, and equitably, wherever they are in the world. The network state operates on a layer above nation-states, and will steadily attract increasing amounts of the world’s capital, talent, innovation and economic activity. Ours is not a fixed territory, but a fluid, interwoven network of jurisdictions bound by consent and cooperation.
+
+We live in the intersectioninterstice between a fading past and an emerging future. The Consensys Network State is built to navigate this liminal space, bridging legacy institutions with network-native systems. This is not an escape or exit. It is an evolution. This is not about rejecting society, it’s about supporting people through a period of deep transformation, toward new forms of coordination that honor complexity, diversity, and interdependence.
+This is Web3’s next frontier: a global mesh of self-sovereign collectives, where coordination happens without coercion and communities thrive beyond centralized control.
+
+The Consensys Network State is a platform for experimentation, advancing the tools, protocols, and practices that nurture resilience and autonomy through radical decentralization. We pair this decentralization with cohesion, anchored in shared values, mutual agreements, and trustless collaboration.
+
+We live the ethos we champion: consent, transparency, and human connection. We are not waiting for the future to arrive. We are building it. Together.
+We call on builders, dreamers, thinkers, and doers. Not as users, but as co-creators of a new societal substrate. This is more than a manifesto, it is a declaration of interdependence.
+
+Join the movement.
